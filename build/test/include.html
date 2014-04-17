@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Syndicator tests</title>
+    <link rel="stylesheet" media="all" href="../public/vendor/mocha/mocha.css">
+</head>
+<body>
+
+<div id="mocha"><p><a href="../../">Syndicator tests</a></p></div>
+<div id="messages"></div>
+<div id="fixtures"></div>
+
+<div id="testing-field">
+    <span class="price">$301</span>
+    <p class="location">
+        <i>Russia</i>
+        <b>Moscow</b>
+        Req Square 5
+    </p>
+</div>
+
+
+<script src="../public/vendor/mocha/mocha.js"></script>
+<script src="../public/vendor/mocha/chaijs.js"></script>
+
+
+<script>
+    mocha.setup('bdd');
+    var expect;
+    expect = chai.expect;
+</script>
+
+<script src="../public/vendor/q.js"></script>
+<script src="../public/utils.js"></script>
+<script src="../public/operations.js"></script>
+<script src="../public/operation.js"></script>
+<script src="../public/parser.js"></script>
+
+<script src="../test/test.operation.js"></script>
+<script src="../test/test.general.js"></script>
+<script src="../test/test.parser.js"></script>
+<script src="../test/test.operations.js"></script>
+
+<script>mocha.run()</script>
+</body>
+</html>
