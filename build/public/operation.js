@@ -10,11 +10,10 @@ var __hasProp = {}.hasOwnProperty;
   var Operation;
   Operation = (function() {
     function Operation(config) {
-      this.config = config != null ? config : {
-        type: null
-      };
+      var val;
       this.parser = null;
       this.field = null;
+      this.config = config;
 
       /*
       We have to use this shortcut to create new operation inside existing one, in order to save execution context
@@ -25,10 +24,19 @@ var __hasProp = {}.hasOwnProperty;
       this._evaluate = function(res) {
         return res || null;
       };
-      this.evaluate = function(value) {
+      this.evaluate = function(value, cb) {
         var d;
         d = Q.defer();
+        cb = cb || function() {};
+        if (typeof cb !== 'function') {
+          cb = function() {};
+        }
+        if (typeof value === 'function' && arguments.length === 1) {
+          cb = value;
+          value = null;
+        }
         if (this.config.final && value) {
+          cb(value);
           d.resolve(value);
         } else {
           if (!this._evaluate) {
@@ -43,12 +51,14 @@ var __hasProp = {}.hasOwnProperty;
                 return Q.fcall(function() {
                   return _this.decorate(result);
                 }).then(function(res) {
+                  cb(res);
                   return d.resolve(res);
                 }, function(error) {
                   var val;
                   val = _this.getField();
                   val = val ? val.name : "undefined";
                   console.log("Error during decoration " + val + ": " + _this.type, error.stack);
+                  cb(result);
                   return d.resolve(result);
                 });
               };
@@ -58,6 +68,7 @@ var __hasProp = {}.hasOwnProperty;
                 val = _this.getField();
                 val = val ? val.name : "undefined";
                 console.log("Error in " + val + ": " + _this.type, error.stack);
+                cb(value);
                 return d.resolve(value);
               };
             })(this));
@@ -88,11 +99,22 @@ var __hasProp = {}.hasOwnProperty;
           return document;
         }
       };
-      this.getValue = function(valName) {
-        var parser;
+      this.getValue = function(valName, cb) {
+        var dep, parent, parser, value, _i, _len;
+        if (this.getField() && this.getField().parentFields) {
+          parent = this.getField().parentFields;
+          for (_i = 0, _len = parent.length; _i < _len; _i++) {
+            dep = parent[_i];
+            if (dep.name === valName) {
+              console.log("Warning: Cirsular dependencies while getting %s from %o", valName, this.getField());
+              return false;
+            }
+          }
+        }
         parser = this.getParser();
         if (parser) {
-          return parser.value(valName);
+          value = parser.value(valName, this, cb);
+          return value;
         } else {
           return null;
         }
@@ -109,7 +131,8 @@ var __hasProp = {}.hasOwnProperty;
           "attribute": "get_attribute",
           "template": "html_template",
           "opName": "pre_built",
-          "js": "js_eval"
+          "js": "js_eval",
+          "separator": "split"
         };
         if (config.type !== void 0) {
           type = config.type;
@@ -119,6 +142,16 @@ var __hasProp = {}.hasOwnProperty;
             typeName = type_mapping[attr];
             if (typeof config[attr] !== "undefined") {
               type = typeName;
+              break;
+            }
+          }
+        }
+        if (!type) {
+          for (attr in config) {
+            if (!__hasProp.call(config, attr)) continue;
+            typeName = config[attr];
+            if (typeof this.operations[attr] !== "undefined") {
+              type = attr;
               break;
             }
           }
@@ -133,7 +166,7 @@ var __hasProp = {}.hasOwnProperty;
           };
         })(this);
       } else {
-        if (typeof this.config === "string") {
+        if (typeof this.config === "string" || typeof this.config === "number") {
           this.config = {
             type: "manual",
             value: this.config
@@ -141,7 +174,9 @@ var __hasProp = {}.hasOwnProperty;
         }
         this.type = this.getType(this.config);
         if (!this.type || !this.operations[this.type]) {
-          console.log("Unknown operation type:" + this.type, this.config);
+          val = this.getField();
+          val = val ? val.name : "undefined";
+          console.log("Unknown operation type " + val + ":" + this.type, this.config);
         } else {
           this._evaluate = this.operations[this.type];
         }
@@ -206,6 +241,16 @@ var __hasProp = {}.hasOwnProperty;
   };
   Operation.prototype.operations = operations;
   Operation.prototype.decorators = {
+    postProcessing: function(value) {
+      if (this.config.postProcessing) {
+        return this.createOperation(this.config.postProcessing).evaluate(value);
+      }
+    },
+    postprocessing: function(value) {
+      if (this.config.postprocessing) {
+        return this.createOperation(this.config.postprocessing).evaluate(value);
+      }
+    },
     normalize_space: function(value) {
       var val, _i, _len, _results;
       if (value instanceof Array) {
@@ -226,16 +271,12 @@ var __hasProp = {}.hasOwnProperty;
       }
     },
     glue: function(value) {
-      var r, val, _i, _len;
       if (value instanceof Array) {
-        r = [];
-        for (_i = 0, _len = value.length; _i < _len; _i++) {
-          val = value[_i];
+        return value.filter(function(val) {
           if (val) {
-            r.push(val);
+            return val;
           }
-        }
-        return r.join(this.config.glue);
+        }).join(this.config.glue);
       } else {
         return value;
       }

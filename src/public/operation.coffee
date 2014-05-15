@@ -5,9 +5,10 @@
     root.Operation = factory root.operations, root.Q
 )( @, (operations, Q)->
   class Operation
-    constructor: ( @config = { type: null } )->
-      @parser = null
+    constructor: ( config )->
+      @parser = null                                
       @field = null
+      @config = config
 
       ###
       We have to use this shortcut to create new operation inside existing one, in order to save execution context
@@ -28,6 +29,10 @@
         cb = cb || ()->
         if typeof cb != 'function'
           cb = ()->
+
+        if typeof value == 'function' && arguments.length == 1
+          cb = value
+          value = null
 
         if @config.final && value
           cb value
@@ -78,9 +83,17 @@
           document
 
       @getValue = ( valName, cb )->
+        if @getField() && @getField().parentFields
+          parent = @.getField().parentFields
+          for dep in parent
+            if dep.name == valName
+              console.log "Warning: Cirsular dependencies while getting %s from %o", valName, @.getField()
+              return false
         parser = @getParser()
+        # console.log("get field #{valName}", parser)
         if parser
-          parser.value( valName, cb )
+          value = parser.value( valName, @, cb )
+          value
         else
           null
 
@@ -97,6 +110,7 @@
           "template" : "html_template"
           "opName" : "pre_built"
           "js" : "js_eval"
+          "separator" : "split"
 
         if config.type != undefined
         then type = config.type
@@ -104,6 +118,11 @@
           if typeof config[attr] != "undefined"
             type = typeName
             break
+        if !type
+          for own attr, typeName of config
+            if typeof @operations[attr] != "undefined"
+              type = attr
+              break
         type
 
       #if array of operations
@@ -112,14 +131,16 @@
         @_evaluate = ( value )=>
           @evaluateQueue( value )
       else
-        if typeof @config == "string"
+        if typeof @config == "string" || typeof @config == "number"
         then @config =
           type: "manual"
           value: @config
 
         @type = @getType @config
         if !@type or !@operations[ @type ]
-          console.log "Unknown operation type:#{@type}", @config
+          val = @getField()
+          val = if val then val.name else "undefined"
+          console.log "Unknown operation type #{val}:#{@type}", @config
         else
           @_evaluate = @operations[ @type ]
 
@@ -163,13 +184,23 @@
     result = Q( ops.shift().evaluate( value ) )
     ops.forEach (f)->
       result = result.then ( val )->
-#        console.log "op type #{f.type} prev val", val, typeof val
+        # console.log "op type #{f.type} prev val", val, typeof val
         f.evaluate( val )
 
     result
 
   Operation::operations = operations
   Operation::decorators = {
+    postProcessing: ( value )->
+      if @config.postProcessing
+        @createOperation @config.postProcessing
+        .evaluate value
+
+    postprocessing: ( value )->
+      if @config.postprocessing
+        @createOperation @config.postprocessing
+        .evaluate value
+
     normalize_space: ( value )->
       if value instanceof Array
         for val in value
@@ -184,11 +215,10 @@
 
     glue: ( value )->
       if value instanceof Array
-        r = []
-        for val in value
+        value.filter (val)->
           if val
-            r.push val
-        r.join @config.glue
+            val
+        .join @config.glue
       else
         value
 

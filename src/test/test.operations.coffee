@@ -20,6 +20,7 @@ describe "Specific Operations", () ->
         { type: "regex", regex: "(\\d+)" }
       ] }
     ]).then ( res )->
+      console.log res
       expect res
       .to.have.a.property "clear_price", "301"
 
@@ -81,3 +82,37 @@ describe "Specific Operations", () ->
     op.evaluate().then ( res )->
       expect res
       .to.equal "value2"
+
+  it "concatenation", ()->
+    op1 = new Operation [
+      {
+        "type": "concatenation",
+        "glue": ", ",
+        "parts": [
+          {
+            "value": "val1"
+            "postProcessing": {
+              "type": "wait",
+              "delay": "700"
+            }
+          },
+          {
+            "value": "val2"
+            "postProcessing": {
+              "type": "wait",
+              "delay": "500"
+            }
+          },
+          {
+            "value": "val3"
+            "postProcessing": {
+              "type": "wait",
+              "delay": "200"
+            }
+          }
+        ]
+      }
+    ]
+    op1.evaluate().then ( res )->
+      expect res
+      .to.equal "val1, val2, val3"

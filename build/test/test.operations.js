@@ -34,6 +34,7 @@ describe("Specific Operations", function() {
         ]
       }
     ]).then(function(res) {
+      console.log(res);
       return expect(res).to.have.a.property("clear_price", "301");
     });
   });
@@ -87,7 +88,7 @@ describe("Specific Operations", function() {
       return expect(res).to.have.property("price", "301");
     });
   });
-  return it("split", function() {
+  it("split", function() {
     var op;
     op = new Operation([
       {
@@ -100,6 +101,39 @@ describe("Specific Operations", function() {
     ]);
     return op.evaluate().then(function(res) {
       return expect(res).to.equal("value2");
+    });
+  });
+  return it("concatenation", function() {
+    var op1;
+    op1 = new Operation([
+      {
+        "type": "concatenation",
+        "glue": ", ",
+        "parts": [
+          {
+            "value": "val1",
+            "postProcessing": {
+              "type": "wait",
+              "delay": "700"
+            }
+          }, {
+            "value": "val2",
+            "postProcessing": {
+              "type": "wait",
+              "delay": "500"
+            }
+          }, {
+            "value": "val3",
+            "postProcessing": {
+              "type": "wait",
+              "delay": "200"
+            }
+          }
+        ]
+      }
+    ]);
+    return op1.evaluate().then(function(res) {
+      return expect(res).to.equal("val1, val2, val3");
     });
   });
 });

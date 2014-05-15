@@ -1,3 +1,4 @@
+var fs = require('fs');
 var gulp = require('gulp');
 var coffee = require('gulp-coffee');
 var watch = require('gulp-watch');
@@ -7,6 +8,9 @@ require('jshint-stylish');
 
 gulp.task('watch', function() {
     gulp.watch(['src/**/*.coffee'], ['coffee']);
+});
+gulp.task('observe', function() {
+    gulp.watch(['src/**/*.coffee'], ['copy']);
 });
 
 gulp.task('coffee', function() {
@@ -29,10 +33,11 @@ gulp.task('jshint', function() {
         .pipe(jshint.reporter('fail'))
 });
 
-gulp.task('optimize', function(cb){
+gulp.task('optimize', ['coffee'],function(cb){
     var requirejs = require('requirejs');
     var config = {
         baseUrl: "build/public",
+        optimize: "none",
         paths: {
             q: "vendor/q"
         },
@@ -51,4 +56,17 @@ gulp.task('optimize', function(cb){
         console.log( err );
         cb(err);
     });
+});
+
+gulp.task('copy', ['optimize'],function(cb){
+    var config = {
+        out: "build/dist/dparser.min.js"
+    };
+    var oldFile = fs.createReadStream(config.out);
+    var newFile = fs.createWriteStream('../Extension/chrome/src/js/syndication/dparser.min.js');
+    oldFile.on('end', function () {
+      console.log('Copy end');
+      cb();
+    });
+    oldFile.pipe(newFile);
 });

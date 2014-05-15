@@ -8,7 +8,7 @@
   var operations;
   operations = {};
   operations.manual = function() {
-    if (this.config && this.config.value) {
+    if (this.config && typeof this.config.value !== "undefined") {
       return this.config.value;
     } else {
       return null;
@@ -16,19 +16,59 @@
   };
   operations.regex = function(value) {
     var reg, res;
-    reg = new RegExp(this.config.regex, "i");
-    res = reg.exec(value);
-    if (res) {
-      return res[1];
+    if (value) {
+      reg = new RegExp(this.config.regex, "i");
+      res = reg.exec(value);
+      if (res) {
+        return res[1];
+      } else {
+        return null;
+      }
     } else {
       return null;
     }
   };
   operations.xpath = function() {
-    var el, fname, m, _i, _len;
+    var d, el, fname, m, _i, _len;
     if (this.config.xpath) {
       if (this.config.document_url) {
-        return Q.defer().promise;
+        console.log("Xpath: document_url detected");
+        d = Q.defer();
+        this.createOperation(this.config.document_url).evaluate().then((function(_this) {
+          return function(result) {
+            var xhr;
+            console.log("Xpath: document_url %s", result);
+            xhr = new XMLHttpRequest();
+            xhr.open('GET', result, true);
+            xhr.onload = function(e) {
+              var doc, el, fname, m, parser, txt, xpathResult, _i, _len;
+              if (xhr.status === 200) {
+                txt = xhr.responseText;
+                parser = new DOMParser();
+                doc = parser.parseFromString(txt, "text/html");
+                m = _this.config.xpath.match(/\{:(.+?):\}/ig);
+                if (m) {
+                  for (_i = 0, _len = m.length; _i < _len; _i++) {
+                    fname = m[_i];
+                    el = /\{:(.+?):\}/.exec(fname)[1];
+                    _this.config.xpath = _this.config.xpath.replace(fname, _this.getParser().getAttr(el));
+                  }
+                }
+                xpathResult = utils.xpathEval(doc, _this.config.xpath);
+                console.log('Xpath on remote doc return', xpathResult);
+                return d.resolve(xpathResult);
+              }
+            };
+            xhr.ontimeout = function(e) {
+              return d.resolve(new Error());
+            };
+            xhr.onerror = function(e) {
+              return d.resolve(new Error());
+            };
+            return xhr.send();
+          };
+        })(this));
+        return d.promise;
       } else {
         m = this.config.xpath.match(/\{:(.+?):\}/ig);
         if (m) {
@@ -44,19 +84,24 @@
       return null;
     }
   };
-  operations.wait = function() {
-    var d, sec;
+  operations.wait = function(value) {
+    var d;
     d = Q.defer();
-    sec = Math.floor(this.config.delay / 1000);
     window.setTimeout(function() {
-      return d.resolve("" + sec + " seconds passed");
+      return d.resolve(value);
     }, this.config.delay);
     return d.promise;
   };
   operations.get_attribute = function(value) {
     var el, getAttr, res, _i, _len;
     getAttr = function(el, attr) {
-      return el[attr];
+      var res;
+      res = el[attr];
+      if (!res && el instanceof HTMLElement) {
+        return res = el.getAttribute(attr);
+      } else {
+        return res;
+      }
     };
     if (value) {
       res = [];
@@ -146,21 +191,18 @@
     return res;
   };
   operations.parsed_val = function() {
-    return Q(this.getValue(this.config.valName));
+    return Q(this.getValue(this.config.valName || this.config.name));
   };
   operations.concatenation = function() {
-    var d, glue, part, parts, result, toWait, _fn, _i, _len;
+    var d, glue, part, parts, toWait, _fn, _i, _len;
     parts = this.config.parts;
     glue = this.config.glue || "";
     toWait = [];
-    result = [];
     d = Q.defer();
     _fn = (function(_this) {
       return function(part) {
         return toWait.push(_this.createOperation(part).evaluate().then(function(res) {
-          if (res) {
-            return result.push(res);
-          }
+          return res;
         }));
       };
     })(this);
@@ -169,8 +211,47 @@
       _fn(part);
     }
     Q.allSettled(toWait).then((function(_this) {
-      return function() {
-        return d.resolve(result.join(glue));
+      return function(res) {
+        var result;
+        result = res.map(function(v) {
+          return v.value;
+        });
+        return d.resolve(result.filter(function(val) {
+          if (val) {
+            return val;
+          }
+        })).join(glue);
+      };
+    })(this));
+    return d.promise;
+  };
+  operations.collection = function() {
+    var d, part, parts, toWait, _fn, _i, _len;
+    parts = this.config.parts;
+    toWait = [];
+    d = Q.defer();
+    _fn = (function(_this) {
+      return function(part) {
+        return toWait.push(_this.createOperation(part).evaluate().then(function(res) {
+          return res;
+        }));
+      };
+    })(this);
+    for (_i = 0, _len = parts.length; _i < _len; _i++) {
+      part = parts[_i];
+      _fn(part);
+    }
+    Q.allSettled(toWait).then((function(_this) {
+      return function(res) {
+        var result;
+        result = res.map(function(v) {
+          return v.value;
+        });
+        return d.resolve(result.filter(function(val) {
+          if (val) {
+            return val;
+          }
+        }));
       };
     })(this));
     return d.promise;

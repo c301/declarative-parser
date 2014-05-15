@@ -15,14 +15,16 @@ require.config({
   }
 });
 
-require(["parser", "operation", "jquery", "q", "xdomain"], function(Parser, Operation, $, Q) {
-  return $(document).ready(function() {
-    window.Parser = Parser;
-    window.Operation = Operation;
-    window.$ = $;
-    window.Q = Q;
-    return require(["test.general", "test.operation", "test.operations", "test.parser"], function() {
-      return mocha.run();
+require(["parser", "operation", "jquery", "q"], function(Parser, Operation, $, Q) {
+  return require(["xdomain"], function() {
+    return $(document).ready(function() {
+      window.Parser = Parser;
+      window.Operation = Operation;
+      window.$ = $;
+      window.Q = Q;
+      return require(["test.general", "test.operation", "test.operations", "test.parser"], function() {
+        return mocha.run();
+      });
     });
   });
 });

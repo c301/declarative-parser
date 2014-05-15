@@ -9,14 +9,50 @@
       @handleConfig config
       #reset result
       @result = {}
+      #reset result
+      @preBuildResults = {}
       #value getter
-      @value = ( valName, cb )->
-#        @config.onGetValue( valName )
-        if cb && typeof cb == 'function'
-          Q( @result[ valName ] || false ).then ( val )->
-            cb( val )
+      @value = ( valName, op, cb )->
+        # valResult = @result[ valName ]
+        # if typeof valResult != 'undefined' && !valResult.inspect
+        #   console.log "parser.value return", valResult
+        #   if cb && typeof cb == 'function'
+        #     Q( @result[ valName ] || null ).then ( val )->
+        #       cb( val )
+        #   else
+        #     @result[ valName ] || null
+        # else 
+        # console.log "parser.value", valName
+        if @preBuildResults[valName]
+          # console.log "parser.value return prebuilresult", @preBuildResults[valName]
+          if cb && typeof cb == 'function'
+            Q( @preBuildResults[valName] || null ).then ( val )->
+              cb( val )
+          else
+            @preBuildResults[valName] || null
+        else if @parsingConfig[valName]
+          # console.log "Parser.value found", @parsingConfig[valName]
+          field = @parsingConfig[valName]
+          toResolve = {
+            name: field.name,
+            operations: field.operations || field.value
+          }
+          res = @resolveValue toResolve, op
+          if cb && typeof cb == 'function'
+            res.then (val)->
+              cb val
+          res
         else
-          @result[ valName ] || false
+          if cb && typeof cb == 'function'
+            cb null
+
+#        val = null
+#        if !@result[ valName ]
+#          search()
+#        else
+#          val = @result[ valName ]
+#
+
 
       @setAttr = (attrName, value)->
         @[attrName] = value
@@ -39,11 +75,6 @@
       else if typeof config == "object"
         @doc = config.document || document
         @config = config
-        @config.beforeParse = @config.beforeParse || ()-> null
-        @config.afterParse = @config.afterParse || ()-> null
-        @config.beforeParseValue = @config.beforeParseValue || ()-> null
-        @config.afterParseValue = @config.afterParseValue || ()-> null
-        @config.onGetValue = @config.onGetValue || ()-> null
 
         @addOperations @config.operations || {}
         @addDecorators @config.decorators || {}
@@ -56,24 +87,51 @@
       for own name, decorator of decorators
         Operation.prototype.decorators[ name ] = decorator
 
+    addFieldDecorators: (handlers)->
+      for own name, handler of handlers
+        Parser.prototype.handlers[ name ] = handler
 
 
 
-  Parser::parse = ( config, cb )->
+  ###
+  @param {array} config
+  @param {array} config
+  ...
+  @param {function} cb callback
+  ###
+  Parser::parse = ()->
+    # console.log "Parser.parse"
     toWait = []
     d = Q.defer()
     #clean this.result before next parse
     @result = {}
+    @parsingConfig = {}
+
+    if arguments.length > 1
+      if typeof arguments[ arguments.length - 1 ] == 'function'
+        cb = arguments[ arguments.length - 1 ]
+        config = Parser::mergeConfigs( Array.prototype.slice.call( arguments, 0, arguments.length - 1 ) )
+      else
+        config = Parser::mergeConfigs( Array.prototype.slice.call( arguments, 0, arguments.length ) )
+
+    else if !arguments.length
+      d.resolve new Error "Wrong arguments"
+    else
+      config = arguments[0]
+
+    for value in config
+      @parsingConfig[ value.name ] = value
+
     for value in config
       do ( value ) =>
-#        console.log "Calculating #{value.name}", value
+        # console.log "Calculating #{value.name}", value
         @result[ value.name ] = Q.fcall( ()=>
           @resolveValue value
         )
-        .then(
+          .then(
             ( res )=>
               @result[ value.name ] = res
-          ,
+            ,
           ( error )=>
             console.log "Error resolveValue", error.stack
           )
@@ -85,9 +143,26 @@
     .then ()=>
         if cb && typeof cb == 'function'
           cb @result
-        d.resolve @result
+        else
+          d.resolve @result
+
 
     d.promise
+
+  ###
+  @param {object|array} configs
+  @returns {object}
+  ###
+  Parser::mergeConfigs = ( configs )->
+    res = {}
+    for config in configs
+      for field in config
+        if typeof res[ field.name ] == "undefined"
+          res[ field.name ] = field
+
+    Object.keys res
+    .map (key)->
+      res[key]
 
   ###
   @value {object} value linked with operation
@@ -98,16 +173,26 @@
     .setField( value )
     .setParser( @ )
 
-  Parser::resolveValue = ( value )->
-    o = @createOperationForValue value, value.operations
+  Parser::resolveValue = ( value, operation )->
+    if operation
+      # console.log "Set parent field for #{value.name}", operation.getField().name
+      if value.parentFields 
+        value.parentFields.push operation.getField()
+      else
+        value.parentFields = [operation.getField()]
+    o = @createOperationForValue value, value.operations || value.value
     o.evaluate( value.value )
     .then ( res )=>
-        @finalizeValue( value, res )
+        @finalizeValue( o.getField(), res )
 
   Parser::handlers = {
+    postprocessing: ( config, result )->
+      if config.postprocessing
+        new Operation config.postprocessing
+        .evaluate result
+
     required: ( config, result )->
       if config.required && !result
-        console.log config
         if config.prompt_text
           result = prompt config.prompt_text
         else
@@ -115,17 +200,21 @@
       else
         result
 
-    site_specific_fields: ( config, result )->
-      if !@result['site_specific_fields']
-        @result['site_specific_fields'] = {}
-
-      for siteName, value of config['site_specific_fields']
-        if !@result['site_specific_fields'][siteName]
-          @result['site_specific_fields'][siteName] = {}
-        @result['site_specific_fields'][siteName][config.name] = value
-
-      #return initial result
-      result
+    # site_specific_config: ( config, result )->
+    #   d = Q.defer()
+    #   if !@result['site_specific_results']
+    #     @result['site_specific_results'] = {}
+    #
+    #   for siteName, value of config['site_specific_config']
+    #     if !@result['site_specific_results'][siteName]
+    #       @result['site_specific_results'][siteName] = {}
+    #     op = @createOperationForValue( config, value )
+    #     op.evaluate (val)=>
+    #       @result['site_specific_results'][siteName][config.name] = val
+    #       d.resolve result
+    #
+    #     #return initial result
+    #   d.promise
   }
 
   Parser::finalizeValue = ( config, result )->
@@ -140,7 +229,7 @@
       if typeof config[handlerName] != "undefined"
         do (handlerName, func)=>
           if toWait == null
-            toWait = Q( func.call( @, config, result ) ).then (r)->
+            toWait = Q( func.call( @, config, result ) ).then (r)=>
 #                console.log "1 #{decoratorName} return #{r} and set value to #{r}"
               result = r
           else

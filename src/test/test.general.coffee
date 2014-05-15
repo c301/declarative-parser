@@ -1,6 +1,262 @@
 "use strict"
-
+default_config = [
+  {
+    "name": "contact_telephone",
+    "operations": {
+      "valName": "phone"
+    }
+  },
+  {
+    "name": "contact_email",
+    "operations": {
+      "valName": "email"
+    }
+  },
+  {
+    "name": "heading",
+    "operations": {
+      "valName": "title"
+    }
+  },
+  {
+    "name": "street",
+    "operations": {
+      "valName": "street_address"
+    }
+  },
+  {
+    "name":"currency",
+    "value":"USD"
+  },
+  {
+    "name":"property_type",
+    "value":"apartment"
+  },
+  {
+    "name":"building_sqft",
+    "value":""
+  },
+  {
+    "name":"furnished",
+    "value": 0
+  },
+  {
+    "name":"relationship",
+    "value": 0
+  },
+  {
+    "name":"show_on_map",
+    "value":"Y"
+  },
+  {
+    "name":"receive_emails",
+    "value":"N"
+  },
+  {
+    "name":"pet_policy",
+    "value":"2"
+  },
+  {
+    "name":"bathroom_count",
+    "value":"1"
+  },
+  {
+    "name":"bedroom_count",
+    "value":"1"
+  },
+  {
+    "name":"stored_city",
+    "operations":[
+      {
+        "final":"true",
+        "storedName":"kijijiCity"
+      },
+      {
+        "final":"true",
+        "type":"stored",
+        "name":"craigslistCity"
+      },
+      {
+        "final":"true",
+        "type":"stored",
+        "name":"usedeverywhereCity"
+      },
+      {
+        "final":"true",
+        "type":"stored",
+        "name":"ebayclassifiedsCity"
+      },
+      {
+        "final":"true",
+        "type":"stored",
+        "name":"gottarentCity"
+      },
+      {
+        "final":"true",
+        "type":"stored",
+        "name":"viewitCity"
+      },
+      {
+        "final":"true",
+        "type":"stored",
+        "name":"zillowCity"
+      },
+      {
+        "final":"true",
+        "type":"stored",
+        "name":"freerentalsiteCity"
+      },
+      {
+        "final":"true",
+        "type":"stored",
+        "name":"sortopiaCity"
+      }
+    ]
+  },
+  {
+    "name":"location",
+    "operations":[
+      {
+        "type":"parsed_val",
+        "name":"address"
+      }
+    ]
+  },
+  {
+    "name":"street_address",
+    "operations":[
+      {
+        "type":"parsed_val",
+        "name":"address"
+      }
+    ]
+  },
+  {
+    "name":"street_number",
+    "operations":[
+      {
+        "type":"parsed_val",
+        "name":"address"
+      },
+      {
+        "regex":"(\\d+)"
+      }
+    ]
+  },
+  {
+    "name":"street_name",
+    "operations":[
+      {
+        "type":"parsed_val",
+        "name":"address"
+      },
+      {
+        "opName":"street_regex"
+      }
+    ]
+  },
+  {
+    "name":"city",
+    "operations":[
+      {
+        "valName":"stored_city"
+      },
+      {
+        "regex": "^(.*?),"
+      }
+    ]
+  },
+  {
+    "name":"state",
+    "operations":[
+      {
+        "valName":"stored_city"
+      },
+      {
+        "regex": "^.*,\\s(.*),"
+      }
+    ]
+  },
+  {
+    "name":"country",
+    "operations":[
+      {
+        "valName":"stored_city"
+      },
+      {
+        "regex": "^.*,\\s.*,\\s(.*)"
+      }
+    ]
+  },
+  {
+    "name":"signature",
+    "operations":[
+      {
+        "storedName":"listingSignature"
+      }
+    ]
+  },
+  {
+    "name":"want_email",
+    "operations":[
+      {
+        "type":"stored",
+        "name":"usedeverywhereReceiveEmail",
+        "postprocessing":[
+          {
+            "type":"switchOf",
+            "flag":{
+              "type":"equal",
+              "value":"true"
+            },
+            "positive":"Y",
+            "negative":"N"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name":"description",
+    "operations":[
+      {
+        "type":"concatenation",
+        "glue":"",
+        "parts":[
+          {
+            "valName":"description_text"
+          },
+          {
+            "valName":"contact",
+            "preffix":"\nContact:"
+          },
+          {
+            "valName":"phone",
+            "preffix":"\nTelephone:"
+          },
+          {
+            "valName":"available_date",
+            "preffix":"\n"
+          },
+          {
+            "valName":"signature"
+          }
+        ]
+      }
+    ]
+  }
+]
 config = [
+  {
+    "name": "AAA",
+    "operations": [
+      {
+        "type": "wait",
+        "delay": "2000"
+      },
+      { "valName": "title_text" }
+    ]
+  },
   {
     "name": "random",
     "operations": { "type": "randomInt", "from": 1, "to": 99 }
@@ -324,25 +580,28 @@ config = [
 ]
 
 describe "General parsing", ()->
-  it "Get remote doc and parse", (done)->
+  htmlText = ''
+  before (done)->
     @timeout 30000
     $.get "http://www.devonprop.com/victoria-rental-listings/listing/?id=1661", (res)->
-#      console.log res.responseText
+      htmlText = res.responseText
+      done()
 
-      parser = new Parser( res.responseText )
-      parser.parse( config ).then (res)->
-        console.log res
-
-        if res.title_text != "Braemore Manor - 1118 Balmoral Road"
-          done(new Error "Wrong parsing result")
-        else
-          done()
+  it "Get remote doc and parse", (done)->
+    @timeout 5000
+    parser = new Parser( htmlText )
+    parser.parse( config, default_config ).then (res)->
+      console.log res
+      if res.title_text != "Braemore Manor - 1118 Balmoral Road"
+        done(new Error "Wrong parsing result")
+      else
+        done()
 
   it "Pass custom operation", (done)->
-    @timeout 30000
+    @timeout 5000
     parser = new Parser()
     parser.addOperations( {
-      concatenation: ()->
+      concatenation1: ()->
         parts = @config.parts
         glue = @config.glue || ""
 
@@ -367,7 +626,7 @@ describe "General parsing", ()->
       "name": "address",
       "operations": [
         {
-          "type": "concatenation",
+          "type": "concatenation1",
           "glue": ", ",
           "parts": [
             { "value": "Moscow" },

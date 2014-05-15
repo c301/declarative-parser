@@ -10,19 +10,37 @@ var __hasProp = {}.hasOwnProperty;
   var Parser;
   Parser = (function() {
     function Parser(config) {
-      var parser;
-      config = config || document;
-      if (config instanceof HTMLDocument) {
-        this.doc = config;
-      } else if (typeof config === "string") {
-        parser = new DOMParser();
-        this.doc = parser.parseFromString(config, "application/xml");
-      } else if (typeof config === "object") {
-        this.handleConfig(config);
-      }
+      this.handleConfig(config);
       this.result = {};
-      this.value = function(valName) {
-        return this.result[valName] || false;
+      this.preBuildResults = {};
+      this.value = function(valName, op, cb) {
+        var field, res, toResolve;
+        if (this.preBuildResults[valName]) {
+          if (cb && typeof cb === 'function') {
+            return Q(this.preBuildResults[valName] || null).then(function(val) {
+              return cb(val);
+            });
+          } else {
+            return this.preBuildResults[valName] || null;
+          }
+        } else if (this.parsingConfig[valName]) {
+          field = this.parsingConfig[valName];
+          toResolve = {
+            name: field.name,
+            operations: field.operations || field.value
+          };
+          res = this.resolveValue(toResolve, op);
+          if (cb && typeof cb === 'function') {
+            res.then(function(val) {
+              return cb(val);
+            });
+          }
+          return res;
+        } else {
+          if (cb && typeof cb === 'function') {
+            return cb(null);
+          }
+        }
       };
       this.setAttr = function(attrName, value) {
         return this[attrName] = value;
@@ -33,28 +51,19 @@ var __hasProp = {}.hasOwnProperty;
     }
 
     Parser.prototype.handleConfig = function(config) {
-      this.doc = config.document || document;
-      this.config = config;
-      this.config.onGetValue = this.config.onGetValue || function() {
-        return null;
-      };
-      this.config.beforeParse = this.config.beforeParse || function() {
-        return null;
-      };
-      this.config.afterParse = this.config.afterParse || function() {
-        return null;
-      };
-      this.config.beforeParseValue = this.config.beforeParseValue || function() {
-        return null;
-      };
-      this.config.afterParseValue = this.config.afterParseValue || function() {
-        return null;
-      };
-      this.config.onGetValue = this.config.onGetValue || function() {
-        return null;
-      };
-      this.addOperations(this.config.operations || {});
-      return this.addDecorators(this.config.decorators || {});
+      var parser;
+      config = config || document;
+      if (config instanceof HTMLDocument) {
+        return this.doc = config;
+      } else if (typeof config === "string") {
+        parser = new DOMParser();
+        return this.doc = parser.parseFromString(config, "application/xml");
+      } else if (typeof config === "object") {
+        this.doc = config.document || document;
+        this.config = config;
+        this.addOperations(this.config.operations || {});
+        return this.addDecorators(this.config.decorators || {});
+      }
     };
 
     Parser.prototype.addOperations = function(operations) {
@@ -79,14 +88,49 @@ var __hasProp = {}.hasOwnProperty;
       return _results;
     };
 
+    Parser.prototype.addFieldDecorators = function(handlers) {
+      var handler, name, _results;
+      _results = [];
+      for (name in handlers) {
+        if (!__hasProp.call(handlers, name)) continue;
+        handler = handlers[name];
+        _results.push(Parser.prototype.handlers[name] = handler);
+      }
+      return _results;
+    };
+
     return Parser;
 
   })();
-  Parser.prototype.parse = function(config) {
-    var d, toWait, value, _fn, _i, _len;
+
+  /*
+  @param {array} config
+  @param {array} config
+  ...
+  @param {function} cb callback
+   */
+  Parser.prototype.parse = function() {
+    var cb, config, d, toWait, value, _fn, _i, _j, _len, _len1;
     toWait = [];
     d = Q.defer();
     this.result = {};
+    this.parsingConfig = {};
+    if (arguments.length > 1) {
+      if (typeof arguments[arguments.length - 1] === 'function') {
+        cb = arguments[arguments.length - 1];
+        config = Parser.prototype.mergeConfigs(Array.prototype.slice.call(arguments, 0, arguments.length - 1));
+      } else {
+        config = Parser.prototype.mergeConfigs(Array.prototype.slice.call(arguments, 0, arguments.length));
+      }
+    } else if (!arguments.length) {
+      d.resolve(new Error("Wrong arguments"));
+    } else {
+      config = arguments[0];
+    }
+    for (_i = 0, _len = config.length; _i < _len; _i++) {
+      value = config[_i];
+      this.parsingConfig[value.name] = value;
+    }
     _fn = (function(_this) {
       return function(value) {
         _this.result[value.name] = Q.fcall(function() {
@@ -99,16 +143,41 @@ var __hasProp = {}.hasOwnProperty;
         return toWait.push(_this.result[value.name]);
       };
     })(this);
-    for (_i = 0, _len = config.length; _i < _len; _i++) {
-      value = config[_i];
+    for (_j = 0, _len1 = config.length; _j < _len1; _j++) {
+      value = config[_j];
       _fn(value);
     }
     Q.allSettled(toWait).then((function(_this) {
       return function() {
-        return d.resolve(_this.result);
+        if (cb && typeof cb === 'function') {
+          return cb(_this.result);
+        } else {
+          return d.resolve(_this.result);
+        }
       };
     })(this));
     return d.promise;
+  };
+
+  /*
+  @param {object|array} configs
+  @returns {object}
+   */
+  Parser.prototype.mergeConfigs = function(configs) {
+    var config, field, res, _i, _j, _len, _len1;
+    res = {};
+    for (_i = 0, _len = configs.length; _i < _len; _i++) {
+      config = configs[_i];
+      for (_j = 0, _len1 = config.length; _j < _len1; _j++) {
+        field = config[_j];
+        if (typeof res[field.name] === "undefined") {
+          res[field.name] = field;
+        }
+      }
+    }
+    return Object.keys(res).map(function(key) {
+      return res[key];
+    });
   };
 
   /*
@@ -118,19 +187,30 @@ var __hasProp = {}.hasOwnProperty;
   Parser.prototype.createOperationForValue = function(value, evalConfig) {
     return new Operation(evalConfig).setField(value).setParser(this);
   };
-  Parser.prototype.resolveValue = function(value) {
+  Parser.prototype.resolveValue = function(value, operation) {
     var o;
-    o = this.createOperationForValue(value, value.operations);
+    if (operation) {
+      if (value.parentFields) {
+        value.parentFields.push(operation.getField());
+      } else {
+        value.parentFields = [operation.getField()];
+      }
+    }
+    o = this.createOperationForValue(value, value.operations || value.value);
     return o.evaluate(value.value).then((function(_this) {
       return function(res) {
-        return _this.finalizeValue(value, res);
+        return _this.finalizeValue(o.getField(), res);
       };
     })(this));
   };
   Parser.prototype.handlers = {
+    postprocessing: function(config, result) {
+      if (config.postprocessing) {
+        return new Operation(config.postprocessing).evaluate(result);
+      }
+    },
     required: function(config, result) {
       if (config.required && !result) {
-        console.log(config);
         if (config.prompt_text) {
           return result = prompt(config.prompt_text);
         } else {
@@ -139,21 +219,6 @@ var __hasProp = {}.hasOwnProperty;
       } else {
         return result;
       }
-    },
-    site_specific_fields: function(config, result) {
-      var siteName, value, _ref;
-      if (!this.result['site_specific_fields']) {
-        this.result['site_specific_fields'] = {};
-      }
-      _ref = config['site_specific_fields'];
-      for (siteName in _ref) {
-        value = _ref[siteName];
-        if (!this.result['site_specific_fields'][siteName]) {
-          this.result['site_specific_fields'][siteName] = {};
-        }
-        this.result['site_specific_fields'][siteName][config.name] = value;
-      }
-      return result;
     }
   };
   Parser.prototype.finalizeValue = function(config, result) {

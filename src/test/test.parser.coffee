@@ -45,7 +45,7 @@ describe "Parser", ()->
     config = [
       {
         "name" : "price",
-        "site_specific_fields": {
+        "site_specific_config": {
             "olx": 401
         },
         "operations": [
@@ -57,7 +57,7 @@ describe "Parser", ()->
     parser.setAttr "price_name", "price"
     parser.parse( config ).then (res)->
       expect res
-      .to.have.a.deep.property "site_specific_fields.olx.price", 401
+      .to.have.a.deep.property "site_specific_results.olx.price", 401
 
   it "Predefined value", ()->
     config = [
@@ -74,66 +74,73 @@ describe "Parser", ()->
       expect res
       .to.have.a.property "price", '0a'
 
-  it "Predefined value", ()->
+  it "Predefined value 2", ()->
     config = [
       {
-        "name" : "price"
-        "value": "40a3",
-        "operations": [
-          { "regex": "\\d(\\da)" }
-        ]
+        "name":"property_type",
+        "value":"apartment"
+      },
+      {
+        "name":"building_sqft",
+        "value":""
+      },
+      {
+        "name":"furnished",
+        "value": 0
       }
     ]
     parser = new Parser()
     parser.parse( config ).then (res)->
       expect res
-      .to.have.a.property "price", '0a'
+      .to.have.a.property "property_type", 'apartment'
+      expect res
+      .to.have.a.property "building_sqft", ''
+      expect res
+      .to.have.a.property "furnished", 0
 
-  it "Test callback based interface", ()->
+
+  it "Test callback based interface", (done)->
     config = [
       {
-        "name" : "price",
-        "site_specific_fields": {
-          "olx": 401
-        },
+        "name" : "price1",
         "operations": [
           { "type": "xpath", "xpath": "string(.//*[@class='{:price_name:}'])" }
+        ]
+      },
+      {
+        "name" : "price",
+        "site_specific_config": {
+          "olx": { "valName": "price1" }
+        },
+        "operations": [
+          { "type": "manual", "value": "5005" }
         ]
       }
     ]
     parser = new Parser()
     parser.setAttr "price_name", "price"
     parser.parse( config,  (res)->
-      expect res
-      .to.have.a.deep.property "site_specific_fields.olx.price", 401
-
-      #callback in operation
-      op = new Operation({type: "regex", "regex": "(\\d+)"})
-      op.evaluate "Year of build 2010.", (value)->
-        expect value
-        .to.equal "2010"
+      console.log res
+      if res.site_specific_results.olx.price == "$301"
+        done()
+      else
+        done( new Error "Wrong result" )
     )
 
-
-
-  it "onGetValue hook, access another value via this.value('<val_name>') within hook", ()->
+  it "Postprocessing", ( done )->
     config = [
       {
-        "name" : "price"
-        "value": "40a3",
-        "operations": [
-          { "regex": "\\d(\\da)" }
-        ]
-      },
-      {
-        "name" : "title"
-        "value": "Super title"
+        "name":"property_type",
+        "value":"apartment",
+        "postprocessing": [{
+          "regex": "(\\D)", "suffix": "nton"
+        }]
       }
     ]
-    parser = new Parser
-      onGetValue: (valName)->
-        if valName == "price"
-          @value title
-    parser.parse( config ).then (res)->
-      expect res
-      .to.have.a.property "price", '0a'
+
+    parser = new Parser()
+    parser.parse config, (res)->
+      if res.property_type == 'anton'
+        done()
+      else
+        done new Error "Bad results"

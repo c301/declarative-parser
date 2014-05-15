@@ -8,19 +8,53 @@
 
   #config can be accessed via this.config
   operations.manual= ()->
-    if @config and @config.value then @config.value else null
+    if @config and typeof @config.value != "undefined" then @config.value else null
 
   #we can pass existing value (from previos operation) as argument
   operations.regex= ( value )->
-    reg = new RegExp @config.regex, "i"
-    res = reg.exec( value )
-    if res then res[1] else null
+    if value
+      reg = new RegExp @config.regex, "i"
+      res = reg.exec( value )
+      if res then res[1] else null
+    else
+      null
 
   #we have to use this.getDoc() in order to use right document
   operations.xpath= ()->
     if @config.xpath
       if @config.document_url
-        Q.defer().promise
+        console.log("Xpath: document_url detected")
+        d = Q.defer()
+        @createOperation @config.document_url
+          .evaluate()
+          .then ( result )=>
+            console.log("Xpath: document_url %s", result)
+            xhr = new XMLHttpRequest()
+            xhr.open('GET', result, true)
+            xhr.onload = (e)=>
+              if xhr.status == 200
+                txt = xhr.responseText
+                parser = new DOMParser()
+                doc = parser.parseFromString( txt, "text/html" )
+                m = @config.xpath.match( /\{:(.+?):\}/ig )
+                if m
+                  for fname in m
+                    el = /\{:(.+?):\}/.exec(fname)[1]
+                    @config.xpath = @config.xpath.replace fname, @getParser().getAttr( el )
+                xpathResult = utils.xpathEval doc, @config.xpath
+
+                console.log('Xpath on remote doc return', xpathResult)
+                d.resolve( xpathResult )
+            
+            xhr.ontimeout = (e)->
+              d.resolve new Error()
+            
+            xhr.onerror = (e)->
+              d.resolve new Error()
+            
+            xhr.send()
+
+        d.promise
       else
         m = @config.xpath.match( /\{:(.+?):\}/ig )
         if m
@@ -32,20 +66,23 @@
     else
       null
 
-  operations.wait= ()->
+  operations.wait= ( value )->
     d = Q.defer()
 
-    sec = Math.floor( @config.delay / 1000 )
-
     window.setTimeout( ()->
-      d.resolve "#{sec} seconds passed"
+      d.resolve value
     , @config.delay )
 
     d.promise
 
   operations.get_attribute = ( value )->
     getAttr = (el, attr)->
-      el[attr]
+      res = el[attr]
+      if !res && el instanceof HTMLElement
+        res = el.getAttribute attr
+      else
+        res
+
     if value
       res = []
       if value.length != undefined
@@ -93,17 +130,42 @@
     for fname in html.match( /\{:(.+?):\}/ig )
       do ( fname )=>
         el = /\{:(.+?):\}/.exec(fname)[1]
+        # console.log "HTML template getting field #{fname}, #{el}"
         def = Q( @getValue el).then (val)->
+          # console.log "HTML template #{fname}, #{val}"
           html = html.replace fname, val || ''
 
         toWait.push def
 
     Q.allSettled toWait
     .then ()=>
+        # console.log "template done", html
         d.resolve html
 
     d.promise
 
+  # operations.jsonpath = (value)->
+  #   console.log("JSONPath",value, @config.jsonpath);
+  #   d = Q.defer()
+  #   jsonpath = @config.jsonpath
+  #   toWait = []
+  #   for fname in jsonpath.match( /\{:(.+?):\}/ig )
+  #     do ( fname )=>
+  #       el = /\{:(.+?):\}/.exec(fname)[1]
+  #       def = Q( @getValue el).then (val)->
+  #         console.log el, val
+  #         jsonpath = jsonpath.replace fname, val || ''
+  #
+  #       toWait.push def
+  #
+  #   Q.allSettled toWait
+  #     .then ()=>
+  #       res = jsonPath.eval(value, jsonpath) console.log("JSONPath #{jsonpath} : #{res}")
+  #       d.resolve res
+  #
+  #   d.promise
+    
+    
   operations.values_to_map = (value)->
 
 
@@ -127,26 +189,55 @@
     res
 
   operations.parsed_val = ()->
-    Q( @getValue( @config.valName) )
+    Q( @getValue( @config.valName || @config.name ) )
 
   operations.concatenation = ()->
     parts = @config.parts
     glue = @config.glue || ""
 
     toWait = []
-    result = []
+
     d = Q.defer()
     for part in parts
       do ( part ) =>
         toWait.push(
           @createOperation part
           .evaluate().then (res)->
-            if res
-              result.push res
+            res
         )
     Q.allSettled toWait
-    .then ()=>
-        d.resolve result.join glue
+    .then ( res )=>
+      result = res.map (v)->
+        v.value
+
+      d.resolve result.filter (val) ->
+        if val
+          val
+      .join glue
+
+    d.promise
+
+  operations.collection = ()->
+    parts = @config.parts
+
+    toWait = []
+
+    d = Q.defer()
+    for part in parts
+      do ( part ) =>
+        toWait.push(
+          @createOperation part
+          .evaluate().then (res)->
+            res
+        )
+    Q.allSettled toWait
+    .then ( res )=>
+      result = res.map (v)->
+        v.value
+
+      d.resolve result.filter (val) ->
+        if val
+          val
 
     d.promise
 

@@ -12,13 +12,13 @@ require.config
     "utils": "../public/utils"
 
 
-require ["parser", "operation", "jquery", "q", "xdomain"], ( Parser, Operation, $, Q )->
+require ["parser", "operation", "jquery", "q"], ( Parser, Operation, $, Q )->
+  require ["xdomain"], ()->
+    $(document).ready ()->
+      window.Parser = Parser
+      window.Operation = Operation
+      window.$ = $
+      window.Q = Q
 
-  $(document).ready ()->
-    window.Parser = Parser
-    window.Operation = Operation
-    window.$ = $
-    window.Q = Q
-
-    require ["test.general", "test.operation", "test.operations", "test.parser"], ()->
-      mocha.run()
+      require ["test.general", "test.operation", "test.operations", "test.parser"], ()->
+        mocha.run()
