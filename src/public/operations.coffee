@@ -21,14 +21,15 @@
 
   #we have to use this.getDoc() in order to use right document
   operations.xpath= ()->
-    if @config.xpath
+    xpath = @config.xpath
+    if xpath
       if @config.document_url
-        console.log("Xpath: document_url detected")
+        # console.log("Xpath: document_url detected")
         d = Q.defer()
         @createOperation @config.document_url
           .evaluate()
           .then ( result )=>
-            console.log("Xpath: document_url %s", result)
+            # console.log("Xpath: document_url %s", result)
             xhr = new XMLHttpRequest()
             xhr.open('GET', result, true)
             xhr.onload = (e)=>
@@ -36,14 +37,14 @@
                 txt = xhr.responseText
                 parser = new DOMParser()
                 doc = parser.parseFromString( txt, "text/html" )
-                m = @config.xpath.match( /\{:(.+?):\}/ig )
+                m = xpath.match( /\{:(.+?):\}/ig )
                 if m
                   for fname in m
                     el = /\{:(.+?):\}/.exec(fname)[1]
-                    @config.xpath = @config.xpath.replace fname, @getParser().getAttr( el )
-                xpathResult = utils.xpathEval doc, @config.xpath
+                    xpath = xpath.replace fname, @getParser().getAttr( el )
+                xpathResult = utils.xpathEval doc, xpath
 
-                console.log('Xpath on remote doc return', xpathResult)
+                # console.log('Xpath on remote doc return', xpathResult)
                 d.resolve( xpathResult )
             
             xhr.ontimeout = (e)->
@@ -56,13 +57,13 @@
 
         d.promise
       else
-        m = @config.xpath.match( /\{:(.+?):\}/ig )
+        m = xpath.match( /\{:(.+?):\}/ig )
         if m
           for fname in m
             el = /\{:(.+?):\}/.exec(fname)[1]
-            @config.xpath = @config.xpath.replace fname, @getParser().getAttr( el )
+            xpath = xpath.replace fname, @getParser().getAttr( el )
 
-        utils.xpathEval @getDoc(), @config.xpath
+        utils.xpathEval @getDoc(), xpath
     else
       null
 
@@ -210,10 +211,13 @@
       result = res.map (v)->
         v.value
 
-      d.resolve result.filter (val) ->
+      result = result.filter (val)->
         if val
           val
-      .join glue
+
+      result = result.join glue
+
+      d.resolve result
 
     d.promise
 
@@ -263,6 +267,32 @@
   operations.badOperation= ()->
     wrongVar
 
+  operations.js_eval = ()->
+    js = @config.js
+    d = Q.defer()
+    m = js.match /\{:(.+?):\}/ig
+
+    if m
+      promises = []
+      for i in m
+        do (i)=>
+          el = /\{:(.+?):\}/.exec( i )[1]
+          tmp = @getValue el
+            .then ( replacer )->
+              js = js.replace i, replacer 
+
+          promises.push tmp
+
+      Q.allSettled promises
+        .then ()=>
+          res = eval js
+          d.resolve res
+    else
+      res = eval js
+      d.resolve res
+
+    d.promise
+    
 
   operations
 )

@@ -108,13 +108,20 @@ describe("Operations testing", function() {
         return expect(value).to.equal("2010");
       });
     });
-    return it("Should return promise", function() {
+    it("Should return promise", function() {
       var op;
       op = new Operation({
         type: "xpath",
         document_url: "http://google.com"
       });
       return expect(op.evaluate()).to.have.property('promiseDispatch');
+    });
+    return it("Pass empty object", function() {
+      var op;
+      op = new Operation({});
+      return op.evaluate().then(function(value) {
+        return expect(value).to.be["null"];
+      });
     });
   });
   return describe("Operations Queue", function() {

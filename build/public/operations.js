@@ -29,15 +29,14 @@
     }
   };
   operations.xpath = function() {
-    var d, el, fname, m, _i, _len;
-    if (this.config.xpath) {
+    var d, el, fname, m, xpath, _i, _len;
+    xpath = this.config.xpath;
+    if (xpath) {
       if (this.config.document_url) {
-        console.log("Xpath: document_url detected");
         d = Q.defer();
         this.createOperation(this.config.document_url).evaluate().then((function(_this) {
           return function(result) {
             var xhr;
-            console.log("Xpath: document_url %s", result);
             xhr = new XMLHttpRequest();
             xhr.open('GET', result, true);
             xhr.onload = function(e) {
@@ -46,16 +45,15 @@
                 txt = xhr.responseText;
                 parser = new DOMParser();
                 doc = parser.parseFromString(txt, "text/html");
-                m = _this.config.xpath.match(/\{:(.+?):\}/ig);
+                m = xpath.match(/\{:(.+?):\}/ig);
                 if (m) {
                   for (_i = 0, _len = m.length; _i < _len; _i++) {
                     fname = m[_i];
                     el = /\{:(.+?):\}/.exec(fname)[1];
-                    _this.config.xpath = _this.config.xpath.replace(fname, _this.getParser().getAttr(el));
+                    xpath = xpath.replace(fname, _this.getParser().getAttr(el));
                   }
                 }
-                xpathResult = utils.xpathEval(doc, _this.config.xpath);
-                console.log('Xpath on remote doc return', xpathResult);
+                xpathResult = utils.xpathEval(doc, xpath);
                 return d.resolve(xpathResult);
               }
             };
@@ -70,15 +68,15 @@
         })(this));
         return d.promise;
       } else {
-        m = this.config.xpath.match(/\{:(.+?):\}/ig);
+        m = xpath.match(/\{:(.+?):\}/ig);
         if (m) {
           for (_i = 0, _len = m.length; _i < _len; _i++) {
             fname = m[_i];
             el = /\{:(.+?):\}/.exec(fname)[1];
-            this.config.xpath = this.config.xpath.replace(fname, this.getParser().getAttr(el));
+            xpath = xpath.replace(fname, this.getParser().getAttr(el));
           }
         }
-        return utils.xpathEval(this.getDoc(), this.config.xpath);
+        return utils.xpathEval(this.getDoc(), xpath);
       }
     } else {
       return null;
@@ -216,11 +214,13 @@
         result = res.map(function(v) {
           return v.value;
         });
-        return d.resolve(result.filter(function(val) {
+        result = result.filter(function(val) {
           if (val) {
             return val;
           }
-        })).join(glue);
+        });
+        result = result.join(glue);
+        return d.resolve(result);
       };
     })(this));
     return d.promise;
@@ -279,6 +279,40 @@
   };
   operations.badOperation = function() {
     return wrongVar;
+  };
+  operations.js_eval = function() {
+    var d, i, js, m, promises, res, _fn, _i, _len;
+    js = this.config.js;
+    d = Q.defer();
+    m = js.match(/\{:(.+?):\}/ig);
+    if (m) {
+      promises = [];
+      _fn = (function(_this) {
+        return function(i) {
+          var el, tmp;
+          el = /\{:(.+?):\}/.exec(i)[1];
+          tmp = _this.getValue(el).then(function(replacer) {
+            return js = js.replace(i, replacer);
+          });
+          return promises.push(tmp);
+        };
+      })(this);
+      for (_i = 0, _len = m.length; _i < _len; _i++) {
+        i = m[_i];
+        _fn(i);
+      }
+      Q.allSettled(promises).then((function(_this) {
+        return function() {
+          var res;
+          res = eval(js);
+          return d.resolve(res);
+        };
+      })(this));
+    } else {
+      res = eval(js);
+      d.resolve(res);
+    }
+    return d.promise;
   };
   return operations;
 });

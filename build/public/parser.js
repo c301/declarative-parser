@@ -25,10 +25,7 @@ var __hasProp = {}.hasOwnProperty;
           }
         } else if (this.parsingConfig[valName]) {
           field = this.parsingConfig[valName];
-          toResolve = {
-            name: field.name,
-            operations: field.operations || field.value
-          };
+          toResolve = field;
           res = this.resolveValue(toResolve, op);
           if (cb && typeof cb === 'function') {
             res.then(function(val) {
@@ -53,6 +50,9 @@ var __hasProp = {}.hasOwnProperty;
     Parser.prototype.handleConfig = function(config) {
       var parser;
       config = config || document;
+      this.config = config;
+      this.defaultParsingConfig = false;
+      this.defaultValues = config.defaultValues || {};
       if (config instanceof HTMLDocument) {
         return this.doc = config;
       } else if (typeof config === "string") {
@@ -60,7 +60,6 @@ var __hasProp = {}.hasOwnProperty;
         return this.doc = parser.parseFromString(config, "application/xml");
       } else if (typeof config === "object") {
         this.doc = config.document || document;
-        this.config = config;
         this.addOperations(this.config.operations || {});
         return this.addDecorators(this.config.decorators || {});
       }
@@ -110,7 +109,7 @@ var __hasProp = {}.hasOwnProperty;
   @param {function} cb callback
    */
   Parser.prototype.parse = function() {
-    var cb, config, d, toWait, value, _fn, _i, _j, _len, _len1;
+    var cb, config, d, toWait, value, _i, _j, _len, _len1, _parse, _ref;
     toWait = [];
     d = Q.defer();
     this.result = {};
@@ -131,23 +130,53 @@ var __hasProp = {}.hasOwnProperty;
       value = config[_i];
       this.parsingConfig[value.name] = value;
     }
-    _fn = (function(_this) {
-      return function(value) {
-        _this.result[value.name] = Q.fcall(function() {
-          return _this.resolveValue(value);
-        }).then(function(res) {
-          return _this.result[value.name] = res;
-        }, function(error) {
-          return console.log("Error resolveValue", error.stack);
+    if (this.config.defaultConfig) {
+      this.defaultParsingConfig = {};
+      _ref = this.config.defaultConfig;
+      for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+        value = _ref[_j];
+        this.defaultParsingConfig[value.name] = value;
+      }
+    }
+    _parse = (function(_this) {
+      return function(config) {
+        var ld, _fn, _k, _len2;
+        ld = Q.defer();
+        _fn = function(value) {
+          _this.result[value.name] = Q.fcall(function() {
+            return _this.resolveValue(value);
+          }).then(function(res) {
+            if (!res && _this.defaultParsingConfig[value.name]) {
+              return Q.fcall(function() {
+                return _this.resolveValue(_this.defaultParsingConfig[value.name]);
+              }).then(function(res) {
+                if (!res && _this.defaultValues[value.name]) {
+                  return _this.result[value.name] = _this.defaultValues[value.name];
+                } else {
+                  return _this.result[value.name] = res;
+                }
+              }, function(error) {
+                return console.log("Error resolveValue in default config", error.stack);
+              });
+            } else {
+              return _this.result[value.name] = res;
+            }
+          }, function(error) {
+            return console.log("Error resolveValue", error.stack);
+          });
+          return toWait.push(_this.result[value.name]);
+        };
+        for (_k = 0, _len2 = config.length; _k < _len2; _k++) {
+          value = config[_k];
+          _fn(value);
+        }
+        Q.allSettled(toWait).then(function() {
+          return ld.resolve(_this.result);
         });
-        return toWait.push(_this.result[value.name]);
+        return ld.promise;
       };
     })(this);
-    for (_j = 0, _len1 = config.length; _j < _len1; _j++) {
-      value = config[_j];
-      _fn(value);
-    }
-    Q.allSettled(toWait).then((function(_this) {
+    _parse(config).then((function(_this) {
       return function() {
         if (cb && typeof cb === 'function') {
           return cb(_this.result);
@@ -210,11 +239,24 @@ var __hasProp = {}.hasOwnProperty;
       }
     },
     required: function(config, result) {
-      if (config.required && !result) {
+      if (this.defaultValues[config.name] && !result) {
+        return this.defaultValues[config.name];
+      } else if (config.required && !result) {
         if (config.prompt_text) {
           return result = prompt(config.prompt_text);
         } else {
           return result = prompt("Please set value for " + (config.label ? config.label : config.name));
+        }
+      } else {
+        return result;
+      }
+    },
+    "default": function(config, result) {
+      if (!result) {
+        if (config["default"]) {
+          return result = config["default"];
+        } else {
+          return result;
         }
       } else {
         return result;

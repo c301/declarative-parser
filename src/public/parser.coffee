@@ -33,10 +33,11 @@
         else if @parsingConfig[valName]
           # console.log "Parser.value found", @parsingConfig[valName]
           field = @parsingConfig[valName]
-          toResolve = {
-            name: field.name,
-            operations: field.operations || field.value
-          }
+          toResolve = field
+          # toResolve = {
+          #   name: field.name,
+          #   operations: field.operations || field.value
+          # }
           res = @resolveValue toResolve, op
           if cb && typeof cb == 'function'
             res.then (val)->
@@ -64,6 +65,11 @@
     handleConfig: (config)->
       #nothing passed
       config = config || document
+
+      @config = config
+      @defaultParsingConfig = false
+      @defaultValues = config.defaultValues || {} 
+
       #passed html doc
       if config instanceof HTMLDocument
         @doc = config
@@ -74,7 +80,6 @@
       #config is object with settings
       else if typeof config == "object"
         @doc = config.document || document
-        @config = config
 
         @addOperations @config.operations || {}
         @addDecorators @config.decorators || {}
@@ -122,30 +127,56 @@
     for value in config
       @parsingConfig[ value.name ] = value
 
-    for value in config
-      do ( value ) =>
-        # console.log "Calculating #{value.name}", value
-        @result[ value.name ] = Q.fcall( ()=>
-          @resolveValue value
-        )
-          .then(
-            ( res )=>
-              @result[ value.name ] = res
-            ,
-          ( error )=>
-            console.log "Error resolveValue", error.stack
+    if @config.defaultConfig
+      @defaultParsingConfig = {}
+      for value in @config.defaultConfig
+        @defaultParsingConfig[ value.name ] = value
+
+    _parse = ( config )=>
+      ld = Q.defer()
+      for value in config
+        do ( value ) =>
+          # console.log "Calculating #{value.name}", value
+          @result[ value.name ] = Q.fcall( ()=>
+            @resolveValue value
           )
+            .then(
+              ( res )=>
+                if !res and @defaultParsingConfig[ value.name ]
+                  # console.log "Calculating in def config #{value.name}", @defaultParsingConfig[ value.name ]
+                  Q.fcall( ()=>
+                    @resolveValue @defaultParsingConfig[ value.name ]
+                  ).then(
+                    (res)=>
+                      if !res and @defaultValues[ value.name ]
+                        @result[ value.name ] = @defaultValues[ value.name ]
+                      else
+                        @result[ value.name ] = res
+                    ,
+                    (error)=>
+                      console.log "Error resolveValue in default config", error.stack
+                  )
+                else
+                  @result[ value.name ] = res
+              ,
+            ( error )=>
+              console.log "Error resolveValue", error.stack
+            )
 
-        toWait.push @result[ value.name ]
+          toWait.push @result[ value.name ]
 
 
-    Q.allSettled toWait
-    .then ()=>
-        if cb && typeof cb == 'function'
-          cb @result
-        else
-          d.resolve @result
+      Q.allSettled toWait
+      .then ()=>
+        ld.resolve @result
 
+      ld.promise
+
+    _parse(config).then ()=>
+      if cb && typeof cb == 'function'
+        cb @result
+      else
+        d.resolve @result
 
     d.promise
 
@@ -192,11 +223,22 @@
         .evaluate result
 
     required: ( config, result )->
-      if config.required && !result
+      if @defaultValues[config.name] and !result
+        @defaultValues[config.name]
+      else if config.required && !result
         if config.prompt_text
           result = prompt config.prompt_text
         else
           result = prompt "Please set value for " + ( if config.label then config.label else config.name )
+      else
+        result
+
+    default: ( config, result )->
+      if !result
+        if config.default
+          result = config.default
+        else
+          result
       else
         result
 

@@ -2,11 +2,11 @@ var __hasProp = {}.hasOwnProperty;
 
 (function(root, factory) {
   if (typeof define === "function" && define.amd) {
-    return define(["operations", "q"], factory);
+    return define(["operations", "q", "utils"], factory);
   } else {
-    return root.Operation = factory(root.operations, root.Q);
+    return root.Operation = factory(root.operations, root.Q, root.utils);
   }
-})(this, function(operations, Q) {
+})(this, function(operations, Q, utils) {
   var Operation;
   Operation = (function() {
     function Operation(config) {
@@ -176,7 +176,9 @@ var __hasProp = {}.hasOwnProperty;
         if (!this.type || !this.operations[this.type]) {
           val = this.getField();
           val = val ? val.name : "undefined";
-          console.log("Unknown operation type " + val + ":" + this.type, this.config);
+          if (this.type && !this.operations[this.type]) {
+            console.log("Unknown operation type " + val + ":" + this.type, this.config);
+          }
         } else {
           this._evaluate = this.operations[this.type];
         }
@@ -265,8 +267,8 @@ var __hasProp = {}.hasOwnProperty;
           return value;
         } else {
           value = value.trim();
-          value = value.replace(/\s|\t{2,}/g, ' ');
-          return value = value.replace(/^\s*$[\n\r]{1,}/gm, "\n");
+          value = value.replace(/^\s*$[\n\r]{1,}/gm, "\n");
+          return value;
         }
       }
     },
@@ -286,10 +288,10 @@ var __hasProp = {}.hasOwnProperty;
       d = Q.defer();
       if (value && typeof value === 'string') {
         this.createOperation(this.config.suffix).evaluate().then(function(res) {
-          if (res) {
+          if (value) {
             return d.resolve(value + res);
           } else {
-            return d.resolve(res);
+            return d.resolve(value);
           }
         });
       } else {
@@ -302,10 +304,10 @@ var __hasProp = {}.hasOwnProperty;
       d = Q.defer();
       if (value && typeof value === 'string') {
         this.createOperation(this.config.preffix).evaluate().then(function(res) {
-          if (res) {
+          if (value) {
             return d.resolve(res + value);
           } else {
-            return d.resolve(res);
+            return d.resolve(value);
           }
         });
       } else {

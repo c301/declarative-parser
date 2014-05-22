@@ -36,6 +36,25 @@
           return result.stringValue;
         }
       }
+    },
+    isEmpty: function(obj) {
+      var hasOwnProperty, key;
+      hasOwnProperty = Object.prototype.hasOwnProperty;
+      if (obj === null) {
+        return true;
+      }
+      if (obj.length && obj.length > 0) {
+        return false;
+      }
+      if (obj.length === 0) {
+        return true;
+      }
+      for (key in obj) {
+        if (hasOwnProperty.call(obj, key)) {
+          return false;
+        }
+      }
+      return true;
     }
   };
 });

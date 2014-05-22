@@ -24,6 +24,23 @@ describe "Parser", ()->
       expect res
       .to.have.a.property "price", "$301"
 
+  it "Default config", ()->
+    config = [
+      { name : "price", operations: [
+        { type: "xpath", xpath: "string(.//*[@class='priccce'])" }
+      ] }
+    ]
+    parserConf = {
+      defaultConfig: [
+        { "name": "price", "value": "100" }
+      ] 
+    }
+    parser = new Parser( parserConf )
+    parser.parse( config ).then (res)->
+      console.log "Parser returl", res
+      expect res
+      .to.have.a.property "price", "100"
+
   it "Handlers", ()->
     config = [
       {
@@ -41,7 +58,7 @@ describe "Parser", ()->
       expect res
       .to.have.a.property "price", "$301"
 
-  it "Set additional field", ()->
+  it.skip "Set additional field", ()->
     config = [
       {
         "name" : "price",
@@ -56,6 +73,7 @@ describe "Parser", ()->
     parser = new Parser()
     parser.setAttr "price_name", "price"
     parser.parse( config ).then (res)->
+      console.log res
       expect res
       .to.have.a.deep.property "site_specific_results.olx.price", 401
 
@@ -109,9 +127,6 @@ describe "Parser", ()->
       },
       {
         "name" : "price",
-        "site_specific_config": {
-          "olx": { "valName": "price1" }
-        },
         "operations": [
           { "type": "manual", "value": "5005" }
         ]
@@ -120,8 +135,8 @@ describe "Parser", ()->
     parser = new Parser()
     parser.setAttr "price_name", "price"
     parser.parse( config,  (res)->
-      console.log res
-      if res.site_specific_results.olx.price == "$301"
+      console.log "Parser return", res
+      if res.price == "5005"
         done()
       else
         done( new Error "Wrong result" )

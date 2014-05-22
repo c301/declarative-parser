@@ -70,6 +70,12 @@ describe "Operations testing", ()->
       op = new Operation({ type: "xpath", document_url: "http://google.com" })
       expect op.evaluate()
       .to.have.property 'promiseDispatch'
+      
+    it "Pass empty object", ()->
+      op = new Operation({})
+      op.evaluate().then (value)->
+        expect value
+        .to.be.null
 
 
   describe "Operations Queue", ()->

@@ -1,9 +1,9 @@
 ( ( root, factory )->
   if typeof define == "function" && define.amd
-    define ["operations", "q"], factory
+    define ["operations", "q", "utils"], factory
   else
-    root.Operation = factory root.operations, root.Q
-)( @, (operations, Q)->
+    root.Operation = factory root.operations, root.Q, root.utils
+)( @, (operations, Q, utils)->
   class Operation
     constructor: ( config )->
       @parser = null                                
@@ -140,7 +140,8 @@
         if !@type or !@operations[ @type ]
           val = @getField()
           val = if val then val.name else "undefined"
-          console.log "Unknown operation type #{val}:#{@type}", @config
+          if @type and !@operations[ @type ]
+            console.log "Unknown operation type #{val}:#{@type}", @config
         else
           @_evaluate = @operations[ @type ]
 
@@ -210,8 +211,9 @@
           value
         else
           value = value.trim()
-          value = value.replace(/\s|\t{2,}/g,' ')
+          # value = value.replace(/\s|\t{2,}/g,' ')
           value = value.replace( /^\s*$[\n\r]{1,}/gm, "\n" );
+          value
 
     glue: ( value )->
       if value instanceof Array
@@ -228,10 +230,10 @@
         @createOperation( @config.suffix )
         .evaluate()
         .then ( res )->
-            if res
+            if value
               d.resolve( value + res )
             else
-              d.resolve( res )
+              d.resolve( value )
       else
         d.resolve( value )
       d.promise
@@ -242,10 +244,10 @@
         @createOperation( @config.preffix )
         .evaluate()
         .then ( res )->
-            if res
+            if value
               d.resolve( res + value )
             else
-              d.resolve( res )
+              d.resolve( value )
       else
         d.resolve( value )
       d.promise
