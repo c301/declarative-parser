@@ -1,3 +1,5 @@
+var __hasProp = {}.hasOwnProperty;
+
 (function(root, factory) {
   if (typeof define === "function" && define.amd) {
     return define(["q", "utils"], factory);
@@ -28,8 +30,8 @@
       return null;
     }
   };
-  operations.xpath = function() {
-    var d, el, fname, m, xpath, _i, _len;
+  operations.xpath = function(value) {
+    var d, el, fname, m, parser, xpath, _i, _len;
     xpath = this.config.xpath;
     if (xpath) {
       if (this.config.document_url) {
@@ -47,10 +49,13 @@
                 doc = parser.parseFromString(txt, "text/html");
                 m = xpath.match(/\{:(.+?):\}/ig);
                 if (m) {
+                  parser = _this.getParser();
                   for (_i = 0, _len = m.length; _i < _len; _i++) {
                     fname = m[_i];
                     el = /\{:(.+?):\}/.exec(fname)[1];
-                    xpath = xpath.replace(fname, _this.getParser().getAttr(el));
+                    if (parser) {
+                      xpath = xpath.replace(fname, parser.getAttr(el));
+                    }
                   }
                 }
                 xpathResult = utils.xpathEval(doc, xpath);
@@ -70,13 +75,33 @@
       } else {
         m = xpath.match(/\{:(.+?):\}/ig);
         if (m) {
+          parser = this.getParser();
           for (_i = 0, _len = m.length; _i < _len; _i++) {
             fname = m[_i];
             el = /\{:(.+?):\}/.exec(fname)[1];
-            xpath = xpath.replace(fname, this.getParser().getAttr(el));
+            if (parser) {
+              xpath = xpath.replace(fname, parser.getAttr(el));
+            }
           }
         }
-        return utils.xpathEval(this.getDoc(), xpath);
+        if (this.config.doc) {
+          d = Q.defer();
+          this.createOperation(this.config.doc).evaluate(value).then((function(_this) {
+            return function(doc) {
+              var res;
+              console.log(doc, xpath);
+              res = utils.xpathEval(doc, xpath);
+              return d.resolve(res);
+            };
+          })(this));
+          return d.promise;
+        } else {
+          if (value instanceof HTMLDocument || value instanceof XMLDocument) {
+            return utils.xpathEval(value, xpath);
+          } else {
+            return utils.xpathEval(this.getDoc(), xpath);
+          }
+        }
       }
     } else {
       return null;
@@ -117,6 +142,22 @@
     } else {
       return value;
     }
+  };
+  operations.set_attribute = function(value) {
+    var attr, k, v;
+    console.log("WARNING set_attribute not tested yet");
+    attr = this.config.attribute;
+    if (!(value instanceof Array)) {
+      value = [value];
+    }
+    for (k in attr) {
+      if (!__hasProp.call(attr, k)) continue;
+      v = attr[k];
+      value.forEach(function(el) {
+        return el[k] = v;
+      });
+    }
+    return value;
   };
   operations.switchOf = function(value) {
     var execPosOrNeg;
@@ -289,9 +330,13 @@
       promises = [];
       _fn = (function(_this) {
         return function(i) {
-          var el, tmp;
+          var el, tmp, val;
           el = /\{:(.+?):\}/.exec(i)[1];
-          tmp = _this.getValue(el).then(function(replacer) {
+          val = Q(_this.getValue(el));
+          tmp = val.then(function(replacer) {
+            if (!replacer) {
+              replacer = '';
+            }
             return js = js.replace(i, replacer);
           });
           return promises.push(tmp);
@@ -313,6 +358,16 @@
       d.resolve(res);
     }
     return d.promise;
+  };
+  operations.remove_element = function(value) {
+    if (!(value instanceof Array)) {
+      value = [value];
+    }
+    return value.forEach(function(el) {
+      if (el && (el instanceof HTMLElement)) {
+        return el.parentNode.removeChild(el);
+      }
+    });
   };
   return operations;
 });

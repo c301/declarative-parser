@@ -20,7 +20,7 @@
       null
 
   #we have to use this.getDoc() in order to use right document
-  operations.xpath= ()->
+  operations.xpath= ( value )->
     xpath = @config.xpath
     if xpath
       if @config.document_url
@@ -39,9 +39,11 @@
                 doc = parser.parseFromString( txt, "text/html" )
                 m = xpath.match( /\{:(.+?):\}/ig )
                 if m
+                  parser = @getParser()
                   for fname in m
                     el = /\{:(.+?):\}/.exec(fname)[1]
-                    xpath = xpath.replace fname, @getParser().getAttr( el )
+                    if parser
+                      xpath = xpath.replace fname, parser.getAttr( el )
                 xpathResult = utils.xpathEval doc, xpath
 
                 # console.log('Xpath on remote doc return', xpathResult)
@@ -59,11 +61,26 @@
       else
         m = xpath.match( /\{:(.+?):\}/ig )
         if m
+          parser = @getParser()
           for fname in m
             el = /\{:(.+?):\}/.exec(fname)[1]
-            xpath = xpath.replace fname, @getParser().getAttr( el )
+            if parser
+              xpath = xpath.replace fname, parser.getAttr( el )
 
-        utils.xpathEval @getDoc(), xpath
+        if @config.doc
+          d = Q.defer()        
+          @createOperation @config.doc
+            .evaluate( value )
+            .then ( doc )=>              
+              console.log doc, xpath
+              res = utils.xpathEval doc, xpath
+              d.resolve res
+          d.promise
+        else
+          if value instanceof HTMLDocument or value instanceof XMLDocument
+            utils.xpathEval value, xpath
+          else
+            utils.xpathEval @getDoc(), xpath
     else
       null
 
@@ -92,6 +109,16 @@
       else res = getAttr value, @config.attribute
       res
     else value
+
+  operations.set_attribute = ( value )->
+    console.log "WARNING set_attribute not tested yet"
+    attr = @config.attribute
+    if !(value instanceof Array)
+      value = [value]
+    for own k, v of attr
+      value.forEach (el)->
+        el[k] = v
+    value
 
   # represents "if" statements
   operations.switchOf = ( value )->
@@ -277,9 +304,15 @@
       for i in m
         do (i)=>
           el = /\{:(.+?):\}/.exec( i )[1]
-          tmp = @getValue el
-            .then ( replacer )->
-              js = js.replace i, replacer 
+          val = Q( @getValue el )
+          # console.log "1 js_eval getting", i, val
+
+          tmp = val.then ( replacer )->
+            if !replacer
+              replacer = ''
+            js = js.replace i, replacer 
+            # console.log "js_eval", i, replacer, js
+
 
           promises.push tmp
 
@@ -293,6 +326,12 @@
 
     d.promise
     
+  operations.remove_element = (value)->
+    if !(value instanceof Array)
+      value = [value]
+    value.forEach (el)->
+      if el and ( el instanceof HTMLElement )
+        el.parentNode.removeChild el
 
   operations
 )

@@ -14,8 +14,15 @@ var __hasProp = {}.hasOwnProperty;
       this.result = {};
       this.preBuildResults = {};
       this.value = function(valName, op, cb) {
-        var field, res, toResolve;
-        if (this.preBuildResults[valName]) {
+        var field, res, toResolve, valResult;
+        valResult = this.result[valName];
+        if (typeof valResult === 'string' || typeof valResult === 'number') {
+          if (cb && typeof cb === 'function') {
+            return cb(valResult);
+          } else {
+            return valResult;
+          }
+        } else if (this.preBuildResults[valName]) {
           if (cb && typeof cb === 'function') {
             return Q(this.preBuildResults[valName] || null).then(function(val) {
               return cb(val);
@@ -178,11 +185,13 @@ var __hasProp = {}.hasOwnProperty;
     })(this);
     _parse(config).then((function(_this) {
       return function() {
-        if (cb && typeof cb === 'function') {
-          return cb(_this.result);
-        } else {
-          return d.resolve(_this.result);
-        }
+        return _this.afterParse(_this.result).then(function() {
+          if (cb && typeof cb === 'function') {
+            return cb(_this.result);
+          } else {
+            return d.resolve(_this.result);
+          }
+        });
       };
     })(this));
     return d.promise;
@@ -232,23 +241,29 @@ var __hasProp = {}.hasOwnProperty;
       };
     })(this));
   };
+  Parser.prototype.afterParse = function() {
+    var d, field, fieldName, _ref;
+    d = Q.defer();
+    _ref = this.parsingConfig;
+    for (fieldName in _ref) {
+      field = _ref[fieldName];
+      if (!this.result[field.name] && field.required) {
+        if (this.defaultValues[field.name]) {
+          this.result[field.name] = this.defaultValues[field.name];
+        } else if (field.prompt_text) {
+          this.result[field.name] = prompt(field.prompt_text);
+        } else {
+          this.result[field.name] = prompt("Please set value for " + (field.label ? field.label : field.name));
+        }
+      }
+    }
+    d.resolve();
+    return d.promise;
+  };
   Parser.prototype.handlers = {
     postprocessing: function(config, result) {
       if (config.postprocessing) {
         return new Operation(config.postprocessing).evaluate(result);
-      }
-    },
-    required: function(config, result) {
-      if (this.defaultValues[config.name] && !result) {
-        return this.defaultValues[config.name];
-      } else if (config.required && !result) {
-        if (config.prompt_text) {
-          return result = prompt(config.prompt_text);
-        } else {
-          return result = prompt("Please set value for " + (config.label ? config.label : config.name));
-        }
-      } else {
-        return result;
       }
     },
     "default": function(config, result) {

@@ -13,17 +13,14 @@
       @preBuildResults = {}
       #value getter
       @value = ( valName, op, cb )->
-        # valResult = @result[ valName ]
-        # if typeof valResult != 'undefined' && !valResult.inspect
+        valResult = @result[ valName ]
+        if typeof valResult == 'string' || typeof valResult == 'number'
         #   console.log "parser.value return", valResult
-        #   if cb && typeof cb == 'function'
-        #     Q( @result[ valName ] || null ).then ( val )->
-        #       cb( val )
-        #   else
-        #     @result[ valName ] || null
-        # else 
-        # console.log "parser.value", valName
-        if @preBuildResults[valName]
+          if cb && typeof cb == 'function'
+              cb( valResult )
+          else
+            valResult
+        else if @preBuildResults[valName]
           # console.log "parser.value return prebuilresult", @preBuildResults[valName]
           if cb && typeof cb == 'function'
             Q( @preBuildResults[valName] || null ).then ( val )->
@@ -173,10 +170,11 @@
       ld.promise
 
     _parse(config).then ()=>
-      if cb && typeof cb == 'function'
-        cb @result
-      else
-        d.resolve @result
+      @afterParse( @result ).then ()=>
+        if cb && typeof cb == 'function'
+          cb @result
+        else
+          d.resolve @result
 
     d.promise
 
@@ -216,22 +214,39 @@
     .then ( res )=>
         @finalizeValue( o.getField(), res )
 
+  Parser::afterParse = ()->
+    d = Q.defer()
+    for fieldName, field of @parsingConfig
+      # console.log("checking #{field.name}", field)
+      if !@result[field.name] and field.required
+        if @defaultValues[field.name]
+          @result[field.name] = @defaultValues[field.name]
+        else if field.prompt_text
+          @result[field.name] = prompt field.prompt_text
+        else
+          @result[field.name] = prompt "Please set value for " + 
+          ( if field.label then field.label else field.name )
+
+    d.resolve()
+    d.promise
+
+
   Parser::handlers = {
     postprocessing: ( config, result )->
       if config.postprocessing
         new Operation config.postprocessing
         .evaluate result
 
-    required: ( config, result )->
-      if @defaultValues[config.name] and !result
-        @defaultValues[config.name]
-      else if config.required && !result
-        if config.prompt_text
-          result = prompt config.prompt_text
-        else
-          result = prompt "Please set value for " + ( if config.label then config.label else config.name )
-      else
-        result
+    # required: ( config, result )->
+    #   if @defaultValues[config.name] and !result
+    #     @defaultValues[config.name]
+    #   else if config.required && !result
+    #     if config.prompt_text
+    #       result = prompt config.prompt_text
+    #     else
+    #       result = prompt "Please set value for " + ( if config.label then config.label else config.name )
+    #   else
+    #     result
 
     default: ( config, result )->
       if !result
