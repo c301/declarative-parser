@@ -16,7 +16,7 @@ var __hasProp = {}.hasOwnProperty;
       this.value = function(valName, op, cb) {
         var field, res, toResolve, valResult;
         valResult = this.result[valName];
-        if (typeof valResult === 'string' || typeof valResult === 'number') {
+        if (valResult) {
           if (cb && typeof cb === 'function') {
             return cb(valResult);
           } else {
@@ -147,10 +147,12 @@ var __hasProp = {}.hasOwnProperty;
     }
     _parse = (function(_this) {
       return function(config) {
-        var ld, _fn, _k, _len2;
-        ld = Q.defer();
-        _fn = function(value) {
-          _this.result[value.name] = Q.fcall(function() {
+        var handleValue, queue, _parseDeferred;
+        _parseDeferred = Q.defer();
+        handleValue = function(value) {
+          var handleDeferred;
+          handleDeferred = Q.defer();
+          Q.fcall(function() {
             return _this.resolveValue(value);
           }).then(function(res) {
             if (!res && _this.defaultParsingConfig[value.name]) {
@@ -158,29 +160,36 @@ var __hasProp = {}.hasOwnProperty;
                 return _this.resolveValue(_this.defaultParsingConfig[value.name]);
               }).then(function(res) {
                 if (!res && _this.defaultValues[value.name]) {
-                  return _this.result[value.name] = _this.defaultValues[value.name];
+                  _this.result[value.name] = _this.defaultValues[value.name];
                 } else {
-                  return _this.result[value.name] = res;
+                  _this.result[value.name] = res;
                 }
+                return handleDeferred.resolve();
               }, function(error) {
-                return console.log("Error resolveValue in default config", error.stack);
+                return handleDeferred.resolve();
               });
             } else {
-              return _this.result[value.name] = res;
+              _this.result[value.name] = res;
+              return handleDeferred.resolve();
             }
           }, function(error) {
-            return console.log("Error resolveValue", error.stack);
+            console.log("Error resolveValue", error.stack);
+            return handleDeferred.resolve();
           });
-          return toWait.push(_this.result[value.name]);
+          return handleDeferred.promise;
         };
-        for (_k = 0, _len2 = config.length; _k < _len2; _k++) {
-          value = config[_k];
-          _fn(value);
-        }
-        Q.allSettled(toWait).then(function() {
-          return ld.resolve(_this.result);
+        queue = Q(handleValue(config.shift()));
+        queue.then(function() {
+          config.forEach(function(value) {
+            return queue = queue.then(function() {
+              return handleValue(value);
+            });
+          });
+          return queue.then(function() {
+            return _parseDeferred.resolve();
+          });
         });
-        return ld.promise;
+        return _parseDeferred.promise;
       };
     })(this);
     _parse(config).then((function(_this) {
@@ -227,19 +236,23 @@ var __hasProp = {}.hasOwnProperty;
   };
   Parser.prototype.resolveValue = function(value, operation) {
     var o;
-    if (operation) {
-      if (value.parentFields) {
-        value.parentFields.push(operation.getField());
-      } else {
-        value.parentFields = [operation.getField()];
+    if (this.preBuildResults[value.name]) {
+      return this.preBuildResults[value.name];
+    } else {
+      if (operation) {
+        if (value.parentFields) {
+          value.parentFields.push(operation.getField());
+        } else {
+          value.parentFields = [operation.getField()];
+        }
       }
+      o = this.createOperationForValue(value, value.operations || value.value);
+      return o.evaluate(value.value).then((function(_this) {
+        return function(res) {
+          return _this.finalizeValue(o.getField(), res);
+        };
+      })(this));
     }
-    o = this.createOperationForValue(value, value.operations || value.value);
-    return o.evaluate(value.value).then((function(_this) {
-      return function(res) {
-        return _this.finalizeValue(o.getField(), res);
-      };
-    })(this));
   };
   Parser.prototype.afterParse = function() {
     var d, field, fieldName, _ref;

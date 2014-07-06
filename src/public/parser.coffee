@@ -14,8 +14,10 @@
       #value getter
       @value = ( valName, op, cb )->
         valResult = @result[ valName ]
-        if typeof valResult == 'string' || typeof valResult == 'number'
-        #   console.log "parser.value return", valResult
+        # console.log 'valResult', valResult
+        # if typeof valResult == 'string' || typeof valResult == 'number'
+        if valResult
+          # console.log "parser.value return", valResult
           if cb && typeof cb == 'function'
               cb( valResult )
           else
@@ -129,45 +131,57 @@
       for value in @config.defaultConfig
         @defaultParsingConfig[ value.name ] = value
 
+
+
+
     _parse = ( config )=>
-      ld = Q.defer()
-      for value in config
-        do ( value ) =>
-          # console.log "Calculating #{value.name}", value
-          @result[ value.name ] = Q.fcall( ()=>
-            @resolveValue value
-          )
-            .then(
-              ( res )=>
-                if !res and @defaultParsingConfig[ value.name ]
-                  # console.log "Calculating in def config #{value.name}", @defaultParsingConfig[ value.name ]
-                  Q.fcall( ()=>
-                    @resolveValue @defaultParsingConfig[ value.name ]
-                  ).then(
-                    (res)=>
-                      if !res and @defaultValues[ value.name ]
-                        @result[ value.name ] = @defaultValues[ value.name ]
-                      else
-                        @result[ value.name ] = res
-                    ,
-                    (error)=>
-                      console.log "Error resolveValue in default config", error.stack
-                  )
-                else
-                  @result[ value.name ] = res
-              ,
+      _parseDeferred = Q.defer()
+
+      handleValue = ( value )=>
+        handleDeferred = Q.defer()
+
+        # console.log "Calculating #{value.name}", value
+        Q.fcall( ()=>
+          @resolveValue value
+        ).then(
+            ( res )=>
+              if !res and @defaultParsingConfig[ value.name ]
+                # console.log "Calculating in def config #{value.name}", @defaultParsingConfig[ value.name ]
+                Q.fcall( ()=>
+                  @resolveValue @defaultParsingConfig[ value.name ]
+                ).then(
+                  (res)=>
+                    if !res and @defaultValues[ value.name ]
+                      @result[ value.name ] = @defaultValues[ value.name ]
+                    else
+                      @result[ value.name ] = res
+                    handleDeferred.resolve()
+                  ,
+                  (error)=>
+                    # console.log "Error resolveValue in default config", error.stack
+                    handleDeferred.resolve()
+                )
+              else
+                # console.log "Calculating RETURN #{value.name}", res
+                @result[ value.name ] = res
+                handleDeferred.resolve()
+            ,
             ( error )=>
               console.log "Error resolveValue", error.stack
-            )
+              handleDeferred.resolve()
+        )
+        handleDeferred.promise
 
-          toWait.push @result[ value.name ]
+      # console.log config
+      queue = Q( handleValue config.shift() )
+      queue.then ()=>
+        config.forEach ( value )=>
+          queue = queue.then ()=> handleValue(value)
 
+        queue.then ()->
+          _parseDeferred.resolve()
 
-      Q.allSettled toWait
-      .then ()=>
-        ld.resolve @result
-
-      ld.promise
+      _parseDeferred.promise
 
     _parse(config).then ()=>
       @afterParse( @result ).then ()=>
@@ -203,16 +217,20 @@
     .setParser( @ )
 
   Parser::resolveValue = ( value, operation )->
-    if operation
-      # console.log "Set parent field for #{value.name}", operation.getField().name
-      if value.parentFields 
-        value.parentFields.push operation.getField()
-      else
-        value.parentFields = [operation.getField()]
-    o = @createOperationForValue value, value.operations || value.value
-    o.evaluate( value.value )
-    .then ( res )=>
-        @finalizeValue( o.getField(), res )
+    # console.log "====  prebuildresult exist for #{value.name}",  @preBuildResults[value.name]
+    if @preBuildResults[value.name]
+      @preBuildResults[value.name]
+    else 
+      if operation
+        # console.log "Set parent field for #{value.name}", operation.getField().name
+        if value.parentFields 
+          value.parentFields.push operation.getField()
+        else
+          value.parentFields = [operation.getField()]
+      o = @createOperationForValue value, value.operations || value.value
+      o.evaluate( value.value )
+      .then ( res )=>
+          @finalizeValue( o.getField(), res )
 
   Parser::afterParse = ()->
     d = Q.defer()

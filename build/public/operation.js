@@ -156,6 +156,7 @@ var __hasProp = {}.hasOwnProperty;
             }
           }
         }
+        config.type = type;
         return type;
       };
       if (this.config instanceof Array && this.config.length) {

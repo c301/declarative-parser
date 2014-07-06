@@ -72,7 +72,6 @@
           @createOperation @config.doc
             .evaluate( value )
             .then ( doc )=>              
-              console.log doc, xpath
               res = utils.xpathEval doc, xpath
               d.resolve res
           d.promise

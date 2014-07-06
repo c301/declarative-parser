@@ -123,6 +123,8 @@
             if typeof @operations[attr] != "undefined"
               type = attr
               break
+
+        config.type = type
         type
 
       #if array of operations

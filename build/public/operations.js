@@ -89,7 +89,6 @@ var __hasProp = {}.hasOwnProperty;
           this.createOperation(this.config.doc).evaluate(value).then((function(_this) {
             return function(doc) {
               var res;
-              console.log(doc, xpath);
               res = utils.xpathEval(doc, xpath);
               return d.resolve(res);
             };
