@@ -9,13 +9,10 @@
       @handleConfig config
       #reset result
       @result = {}
-      #reset result
-      @preBuildResults = {}
       #value getter
       @value = ( valName, op, cb )->
         valResult = @result[ valName ]
-        # console.log 'valResult', valResult
-        # if typeof valResult == 'string' || typeof valResult == 'number'
+        # console.log 'valResult for ', valName, valResult
         if valResult
           # console.log "parser.value return", valResult
           if cb && typeof cb == 'function'
@@ -38,8 +35,10 @@
           #   operations: field.operations || field.value
           # }
           res = @resolveValue toResolve, op
-          if cb && typeof cb == 'function'
-            res.then (val)->
+          res.then (val)=>
+            if( toResolve.persist )
+              @result[valName] = val
+            if cb && typeof cb == 'function'
               cb val
           res
         else
@@ -68,6 +67,7 @@
       @config = config
       @defaultParsingConfig = false
       @defaultValues = config.defaultValues || {} 
+      @preBuildResults = config.preBuildResults || {} 
 
       #passed html doc
       if config instanceof HTMLDocument
@@ -218,7 +218,9 @@
 
   Parser::resolveValue = ( value, operation )->
     # console.log "====  prebuildresult exist for #{value.name}",  @preBuildResults[value.name]
-    if @preBuildResults[value.name]
+    if @result[value.name]
+      @result[ value.name ]
+    else if @preBuildResults[value.name]
       @preBuildResults[value.name]
     else 
       if operation
@@ -239,11 +241,6 @@
       if !@result[field.name] and field.required
         if @defaultValues[field.name]
           @result[field.name] = @defaultValues[field.name]
-        else if field.prompt_text
-          @result[field.name] = prompt field.prompt_text
-        else
-          @result[field.name] = prompt "Please set value for " + 
-          ( if field.label then field.label else field.name )
 
     d.resolve()
     d.promise
@@ -255,16 +252,16 @@
         new Operation config.postprocessing
         .evaluate result
 
-    # required: ( config, result )->
-    #   if @defaultValues[config.name] and !result
-    #     @defaultValues[config.name]
-    #   else if config.required && !result
-    #     if config.prompt_text
-    #       result = prompt config.prompt_text
-    #     else
-    #       result = prompt "Please set value for " + ( if config.label then config.label else config.name )
-    #   else
-    #     result
+    required: ( config, result )->
+      if @defaultValues[config.name] and !result
+        @defaultValues[config.name]
+      else if config.required && !result
+        if config.prompt_text
+          result = prompt config.prompt_text
+        else
+          result = prompt "Please set value for " + ( if config.label then config.label else config.name )
+      else
+        result
 
     default: ( config, result )->
       if !result

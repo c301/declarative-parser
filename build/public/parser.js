@@ -12,7 +12,6 @@ var __hasProp = {}.hasOwnProperty;
     function Parser(config) {
       this.handleConfig(config);
       this.result = {};
-      this.preBuildResults = {};
       this.value = function(valName, op, cb) {
         var field, res, toResolve, valResult;
         valResult = this.result[valName];
@@ -34,11 +33,16 @@ var __hasProp = {}.hasOwnProperty;
           field = this.parsingConfig[valName];
           toResolve = field;
           res = this.resolveValue(toResolve, op);
-          if (cb && typeof cb === 'function') {
-            res.then(function(val) {
-              return cb(val);
-            });
-          }
+          res.then((function(_this) {
+            return function(val) {
+              if (toResolve.persist) {
+                _this.result[valName] = val;
+              }
+              if (cb && typeof cb === 'function') {
+                return cb(val);
+              }
+            };
+          })(this));
           return res;
         } else {
           if (cb && typeof cb === 'function') {
@@ -60,6 +64,7 @@ var __hasProp = {}.hasOwnProperty;
       this.config = config;
       this.defaultParsingConfig = false;
       this.defaultValues = config.defaultValues || {};
+      this.preBuildResults = config.preBuildResults || {};
       if (config instanceof HTMLDocument) {
         return this.doc = config;
       } else if (typeof config === "string") {
@@ -236,7 +241,9 @@ var __hasProp = {}.hasOwnProperty;
   };
   Parser.prototype.resolveValue = function(value, operation) {
     var o;
-    if (this.preBuildResults[value.name]) {
+    if (this.result[value.name]) {
+      return this.result[value.name];
+    } else if (this.preBuildResults[value.name]) {
       return this.preBuildResults[value.name];
     } else {
       if (operation) {
@@ -263,10 +270,6 @@ var __hasProp = {}.hasOwnProperty;
       if (!this.result[field.name] && field.required) {
         if (this.defaultValues[field.name]) {
           this.result[field.name] = this.defaultValues[field.name];
-        } else if (field.prompt_text) {
-          this.result[field.name] = prompt(field.prompt_text);
-        } else {
-          this.result[field.name] = prompt("Please set value for " + (field.label ? field.label : field.name));
         }
       }
     }
@@ -277,6 +280,19 @@ var __hasProp = {}.hasOwnProperty;
     postprocessing: function(config, result) {
       if (config.postprocessing) {
         return new Operation(config.postprocessing).evaluate(result);
+      }
+    },
+    required: function(config, result) {
+      if (this.defaultValues[config.name] && !result) {
+        return this.defaultValues[config.name];
+      } else if (config.required && !result) {
+        if (config.prompt_text) {
+          return result = prompt(config.prompt_text);
+        } else {
+          return result = prompt("Please set value for " + (config.label ? config.label : config.name));
+        }
+      } else {
+        return result;
       }
     },
     "default": function(config, result) {
