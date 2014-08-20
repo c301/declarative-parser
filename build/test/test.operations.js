@@ -38,7 +38,61 @@ describe("Specific Operations", function() {
       return expect(res).to.have.a.property("clear_price", "301");
     });
   });
+  it("Regex", function() {
+    return new Parser().parse([
+      {
+        name: "price",
+        value: "abdADasdlfk"
+      }, {
+        name: "clear_price",
+        operations: [
+          {
+            "valName": "price"
+          }, {
+            type: "regex",
+            regex: "([A-Z]{2})",
+            modifier: ""
+          }
+        ]
+      }
+    ]).then(function(res) {
+      console.log(res);
+      return expect(res).to.have.a.property("clear_price", "AD");
+    });
+  });
   it("Current doc href", function() {
+    var op;
+    op = new Operation([
+      {
+        "type": "current_document"
+      }, {
+        "attribute": "location"
+      }, {
+        "attribute": "href"
+      }
+    ]);
+    return op.evaluate().then(function(res) {
+      return expect(res).to.equal(document.location.href);
+    });
+  });
+  it("Attribute operation", function() {
+    var op;
+    op = new Operation([
+      {
+        "type": "current_document"
+      }, {
+        "attribute": {
+          "value": "location"
+        }
+      }, {
+        "attribute": "href"
+      }
+    ]);
+    return op.evaluate().then(function(res) {
+      return expect(res).to.equal(document.location.href);
+    });
+  });
+  it("Attribute operation 2", function() {
     var op;
     op = new Operation([
       {

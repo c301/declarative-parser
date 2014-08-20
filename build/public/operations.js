@@ -17,9 +17,13 @@ var __hasProp = {}.hasOwnProperty;
     }
   };
   operations.regex = function(value) {
-    var reg, res;
+    var modifier, reg, res;
     if (value) {
-      reg = new RegExp(this.config.regex, "i");
+      modifier = "i";
+      if (typeof this.config.modifier !== 'undefined') {
+        modifier = this.config.modifier;
+      }
+      reg = new RegExp(this.config.regex, modifier);
       res = reg.exec(value);
       if (res) {
         return res[1];
@@ -115,7 +119,8 @@ var __hasProp = {}.hasOwnProperty;
     return d.promise;
   };
   operations.get_attribute = function(value) {
-    var el, getAttr, res, _i, _len;
+    var d, getAttr, res;
+    d = Q.defer();
     getAttr = function(el, attr) {
       var res;
       res = el[attr];
@@ -127,20 +132,25 @@ var __hasProp = {}.hasOwnProperty;
     };
     if (value) {
       res = [];
-      if (value.length !== void 0) {
-        for (_i = 0, _len = value.length; _i < _len; _i++) {
-          el = value[_i];
-          if (el) {
-            res.push(getAttr(el, this.config.attribute));
+      console.log(this.config.attribute, value);
+      this.createOperation(this.config.attribute).evaluate().then(function(attribute) {
+        var el, _i, _len;
+        if (value.length !== void 0) {
+          for (_i = 0, _len = value.length; _i < _len; _i++) {
+            el = value[_i];
+            if (el) {
+              res.push(getAttr(el, attribute));
+            }
           }
+        } else {
+          res = getAttr(value, attribute);
         }
-      } else {
-        res = getAttr(value, this.config.attribute);
-      }
-      return res;
+        return d.resolve(res);
+      });
     } else {
-      return value;
+      d.resolve(value);
     }
+    return d.promise;
   };
   operations.set_attribute = function(value) {
     var attr, k, v;

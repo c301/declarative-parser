@@ -13,9 +13,12 @@
   #we can pass existing value (from previos operation) as argument
   operations.regex= ( value )->
     if value
-      reg = new RegExp @config.regex, "i"
-      res = reg.exec( value )
-      if res then res[1] else null
+        modifier = "i"
+        if typeof @config.modifier != 'undefined'
+            modifier = @config.modifier
+        reg = new RegExp @config.regex, modifier
+        res = reg.exec( value )
+        if res then res[1] else null
     else
       null
 
@@ -93,6 +96,8 @@
     d.promise
 
   operations.get_attribute = ( value )->
+    d = Q.defer()
+
     getAttr = (el, attr)->
       res = el[attr]
       if !res && el instanceof HTMLElement
@@ -102,12 +107,18 @@
 
     if value
       res = []
-      if value.length != undefined
-        for el in value
-          if el then res.push getAttr(el, @config.attribute)
-      else res = getAttr value, @config.attribute
-      res
-    else value
+      console.log(@config.attribute, value)
+      @createOperation( @config.attribute )
+        .evaluate()
+        .then (attribute)->
+            if value.length != undefined
+                for el in value
+                    if el then res.push getAttr(el, attribute)
+            else res = getAttr value, attribute
+            d.resolve res
+    else d.resolve value
+
+    d.promise
 
   operations.set_attribute = ( value )->
     console.log "WARNING set_attribute not tested yet"

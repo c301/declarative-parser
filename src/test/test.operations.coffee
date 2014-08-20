@@ -24,10 +24,45 @@ describe "Specific Operations", () ->
       expect res
       .to.have.a.property "clear_price", "301"
 
+  it "Regex", ()->
+    new Parser().parse([
+      { name : "price", value: "abdADasdlfk" },
+      { name : "clear_price", operations: [
+        { "valName": "price"},
+        { type: "regex", regex: "([A-Z]{2})", modifier: "" }
+      ] }
+    ]).then ( res )->
+      console.log res
+      expect res
+      .to.have.a.property "clear_price", "AD"
+
   it "Current doc href", ()->
     op = new Operation [
       {"type": "current_document"},
       {"attribute": "location"},
+      {"attribute": "href"}
+    ]
+    op.evaluate().then ( res )->
+      expect res
+      .to.equal document.location.href
+
+  it "Attribute operation", ()->
+    op = new Operation [
+      {"type": "current_document"},
+      {"attribute": {
+        "value": "location"
+         }
+      },
+      {"attribute": "href"}
+    ]
+    op.evaluate().then ( res )->
+      expect res
+      .to.equal document.location.href
+
+  it "Attribute operation 2", ()->
+    op = new Operation [
+      {"type": "current_document"},
+      {"attribute": "location"  },
       {"attribute": "href"}
     ]
     op.evaluate().then ( res )->
