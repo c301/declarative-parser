@@ -65,6 +65,7 @@ var __hasProp = {}.hasOwnProperty;
       this.defaultParsingConfig = false;
       this.defaultValues = config.defaultValues || {};
       this.preBuildResults = config.preBuildResults || {};
+      this.debug = config.debug || false;
       if (config instanceof HTMLDocument) {
         return this.doc = config;
       } else if (typeof config === "string") {
@@ -113,6 +114,11 @@ var __hasProp = {}.hasOwnProperty;
     return Parser;
 
   })();
+  Parser.prototype.log = function() {
+    if (this.debug) {
+      return console.log.apply(console, arguments);
+    }
+  };
 
   /*
   @param {array} config
@@ -157,6 +163,7 @@ var __hasProp = {}.hasOwnProperty;
         handleValue = function(value) {
           var handleDeferred;
           handleDeferred = Q.defer();
+          _this.log("= Parser: calculating " + value.name + ". Config:", value);
           Q.fcall(function() {
             return _this.resolveValue(value);
           }).then(function(res) {
@@ -174,6 +181,7 @@ var __hasProp = {}.hasOwnProperty;
                 return handleDeferred.resolve();
               });
             } else {
+              _this.log("= Parser: calculated " + value.name + ". Result:", res);
               _this.result[value.name] = res;
               return handleDeferred.resolve();
             }

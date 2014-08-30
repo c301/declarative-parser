@@ -19,7 +19,7 @@ var __hasProp = {}.hasOwnProperty;
   operations.regex = function(value) {
     var modifier, reg, res;
     if (value) {
-      modifier = "i";
+      modifier = "";
       if (typeof this.config.modifier !== 'undefined') {
         modifier = this.config.modifier;
       }
@@ -132,7 +132,6 @@ var __hasProp = {}.hasOwnProperty;
     };
     if (value) {
       res = [];
-      console.log(this.config.attribute, value);
       this.createOperation(this.config.attribute).evaluate().then(function(attribute) {
         var el, _i, _len;
         if (value.length !== void 0) {
@@ -239,7 +238,18 @@ var __hasProp = {}.hasOwnProperty;
     return res;
   };
   operations.parsed_val = function() {
-    return Q(this.getValue(this.config.valName || this.config.name));
+    var d, valueName;
+    d = Q.defer();
+    valueName = this.config.valName || this.config.name;
+    Q(this.getValue(valueName)).then((function(_this) {
+      return function(value) {
+        if (typeof value === 'undefined') {
+          console.log("Warning: " + valueName + " not found");
+        }
+        return d.resolve(value);
+      };
+    })(this));
+    return d.promise;
   };
   operations.concatenation = function() {
     var d, glue, part, parts, toWait, _fn, _i, _len;

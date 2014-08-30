@@ -179,7 +179,7 @@ describe("Parser", function() {
       }
     });
   });
-  return it("Postprocessing", function(done) {
+  it("Postprocessing", function(done) {
     var config, parser;
     config = [
       {
@@ -200,6 +200,30 @@ describe("Parser", function() {
       } else {
         return done(new Error("Bad results"));
       }
+    });
+  });
+  return it("Debug", function(done) {
+    var config, parser;
+    config = [
+      {
+        "name": "property_type_0",
+        "value": "apartment"
+      }, {
+        "name": "property_type_1",
+        "value": "apartment"
+      }, {
+        "name": "property_type_2",
+        "value": "apartment"
+      }, {
+        "name": "property_type_3",
+        "value": "apartment"
+      }
+    ];
+    parser = new Parser({
+      debug: true
+    });
+    return parser.parse(config, function(res) {
+      return done();
     });
   });
 });

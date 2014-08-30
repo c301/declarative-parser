@@ -68,6 +68,7 @@
       @defaultParsingConfig = false
       @defaultValues = config.defaultValues || {} 
       @preBuildResults = config.preBuildResults || {} 
+      @debug = config.debug || false 
 
       #passed html doc
       if config instanceof HTMLDocument
@@ -95,7 +96,10 @@
       for own name, handler of handlers
         Parser.prototype.handlers[ name ] = handler
 
-
+  Parser::log = ()->
+    if @debug
+      console.log.apply(console, arguments)
+    
 
   ###
   @param {array} config
@@ -140,7 +144,7 @@
       handleValue = ( value )=>
         handleDeferred = Q.defer()
 
-        # console.log "Calculating #{value.name}", value
+        @log "= Parser: calculating #{value.name}. Config:", value
         Q.fcall( ()=>
           @resolveValue value
         ).then(
@@ -162,7 +166,7 @@
                     handleDeferred.resolve()
                 )
               else
-                # console.log "Calculating RETURN #{value.name}", res
+                @log "= Parser: calculated #{value.name}. Result:", res
                 @result[ value.name ] = res
                 handleDeferred.resolve()
             ,

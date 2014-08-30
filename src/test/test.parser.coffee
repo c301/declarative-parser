@@ -159,3 +159,29 @@ describe "Parser", ()->
         done()
       else
         done new Error "Bad results"
+
+  it "Debug", ( done )->
+    config = [
+      {
+        "name":"property_type_0",
+        "value":"apartment"      
+      },
+      {
+        "name":"property_type_1",
+        "value":"apartment"      
+      },
+      {
+        "name":"property_type_2",
+        "value":"apartment"      
+      },
+      {
+        "name":"property_type_3",
+        "value":"apartment"      
+      }
+    ]
+
+    parser = new Parser({
+        debug: true
+    })
+    parser.parse config, (res)->
+        done()

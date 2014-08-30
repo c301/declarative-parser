@@ -13,7 +13,7 @@
   #we can pass existing value (from previos operation) as argument
   operations.regex= ( value )->
     if value
-        modifier = "i"
+        modifier = ""
         if typeof @config.modifier != 'undefined'
             modifier = @config.modifier
         reg = new RegExp @config.regex, modifier
@@ -107,7 +107,6 @@
 
     if value
       res = []
-      console.log(@config.attribute, value)
       @createOperation( @config.attribute )
         .evaluate()
         .then (attribute)->
@@ -227,7 +226,13 @@
     res
 
   operations.parsed_val = ()->
-    Q( @getValue( @config.valName || @config.name ) )
+    d = Q.defer()
+    valueName = @config.valName || @config.name 
+    Q( @getValue( valueName ) ).then (value)=>
+      if typeof value == 'undefined' 
+        console.log("Warning: #{valueName} not found")
+      d.resolve value
+    d.promise
 
   operations.concatenation = ()->
     parts = @config.parts
