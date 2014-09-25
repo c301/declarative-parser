@@ -12,13 +12,28 @@
 
   #we can pass existing value (from previos operation) as argument
   operations.regex= ( value )->
+    toReturn = null
     if value
         modifier = ""
         if typeof @config.modifier != 'undefined'
             modifier = @config.modifier
         reg = new RegExp @config.regex, modifier
-        res = reg.exec( value )
-        if res then res[1] else null
+        console.log reg, value
+        if 'g' in modifier
+            toReturn = []
+            while ( nextRes = reg.exec( value ) ) != null
+                if nextRes 
+                    if @config.full 
+                        toReturn.push nextRes
+                    else
+                        toReturn.push nextRes[1]
+        else
+            res = reg.exec( value )
+            if @config.full 
+                if res then toReturn = res else toReturn = null
+            else
+                if res then toReturn = res[1] else toReturn = null
+        toReturn
     else
       null
 
@@ -110,7 +125,7 @@
       @createOperation( @config.attribute )
         .evaluate()
         .then (attribute)->
-            if value.length != undefined
+            if !value[attribute] && value.length != undefined
                 for el in value
                     if el then res.push getAttr(el, attribute)
             else res = getAttr value, attribute

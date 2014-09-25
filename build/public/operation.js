@@ -99,26 +99,28 @@ var __hasProp = {}.hasOwnProperty;
           return document;
         }
       };
-      this.getValue = function(valName, cb) {
-        var dep, parent, parser, value, _i, _len;
-        if (this.getField() && this.getField().parentFields) {
-          parent = this.getField().parentFields;
-          for (_i = 0, _len = parent.length; _i < _len; _i++) {
-            dep = parent[_i];
-            if (dep.name === valName) {
-              console.log("Warning: Cirsular dependencies while getting %s from %o", valName, this.getField());
-              return false;
+      this.getValue = (function(_this) {
+        return function(valName, cb) {
+          var dep, parent, parser, value, _i, _len;
+          if (_this.getField() && _this.getField().parentFields) {
+            parent = _this.getField().parentFields;
+            for (_i = 0, _len = parent.length; _i < _len; _i++) {
+              dep = parent[_i];
+              if (dep.name === valName) {
+                console.log("Warning: Cirsular dependencies while getting %s from %o", valName);
+                return false;
+              }
             }
           }
-        }
-        parser = this.getParser();
-        if (parser) {
-          value = parser.value(valName, this, cb);
-          return value;
-        } else {
-          return null;
-        }
-      };
+          parser = _this.getParser();
+          if (parser) {
+            value = parser.value(valName, _this, cb);
+            return value;
+          } else {
+            return null;
+          }
+        };
+      })(this);
       this.getType = function(config) {
         var attr, type, typeName, type_mapping;
         type = '';

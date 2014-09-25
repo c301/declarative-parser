@@ -1,4 +1,5 @@
-var __hasProp = {}.hasOwnProperty;
+var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
+  __hasProp = {}.hasOwnProperty;
 
 (function(root, factory) {
   if (typeof define === "function" && define.amd) {
@@ -17,19 +18,43 @@ var __hasProp = {}.hasOwnProperty;
     }
   };
   operations.regex = function(value) {
-    var modifier, reg, res;
+    var modifier, nextRes, reg, res, toReturn;
+    toReturn = null;
     if (value) {
       modifier = "";
       if (typeof this.config.modifier !== 'undefined') {
         modifier = this.config.modifier;
       }
       reg = new RegExp(this.config.regex, modifier);
-      res = reg.exec(value);
-      if (res) {
-        return res[1];
+      console.log(reg, value);
+      if (__indexOf.call(modifier, 'g') >= 0) {
+        toReturn = [];
+        while ((nextRes = reg.exec(value)) !== null) {
+          if (nextRes) {
+            if (this.config.full) {
+              toReturn.push(nextRes);
+            } else {
+              toReturn.push(nextRes[1]);
+            }
+          }
+        }
       } else {
-        return null;
+        res = reg.exec(value);
+        if (this.config.full) {
+          if (res) {
+            toReturn = res;
+          } else {
+            toReturn = null;
+          }
+        } else {
+          if (res) {
+            toReturn = res[1];
+          } else {
+            toReturn = null;
+          }
+        }
       }
+      return toReturn;
     } else {
       return null;
     }
@@ -134,7 +159,7 @@ var __hasProp = {}.hasOwnProperty;
       res = [];
       this.createOperation(this.config.attribute).evaluate().then(function(attribute) {
         var el, _i, _len;
-        if (value.length !== void 0) {
+        if (!value[attribute] && value.length !== void 0) {
           for (_i = 0, _len = value.length; _i < _len; _i++) {
             el = value[_i];
             if (el) {

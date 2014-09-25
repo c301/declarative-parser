@@ -36,6 +36,18 @@ describe "Specific Operations", () ->
       expect res
       .to.have.a.property "clear_price", "AD"
 
+  it "Regex all", ()->
+    new Parser().parse([
+      { name : "price", value: "3abdAD3abasdlfkab" },
+      { name : "clear_price", operations: [
+        { "valName": "price"},
+        { type: "regex", regex: "\\d(ab)", modifier: "g" }
+      ] }
+    ]).then ( res )->
+      console.log res
+      expect res.clear_price.length
+      .to.be.equal 2
+
   it "Current doc href", ()->
     op = new Operation [
       {"type": "current_document"},

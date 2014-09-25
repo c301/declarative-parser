@@ -82,12 +82,12 @@
         else
           document
 
-      @getValue = ( valName, cb )->
+      @getValue = ( valName, cb )=>
         if @getField() && @getField().parentFields
           parent = @.getField().parentFields
           for dep in parent
             if dep.name == valName
-              console.log "Warning: Cirsular dependencies while getting %s from %o", valName, @.getField()
+              console.log "Warning: Cirsular dependencies while getting %s from %o", valName
               return false
         parser = @getParser()
         # console.log("get field #{valName}", parser)

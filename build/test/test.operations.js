@@ -60,6 +60,28 @@ describe("Specific Operations", function() {
       return expect(res).to.have.a.property("clear_price", "AD");
     });
   });
+  it("Regex all", function() {
+    return new Parser().parse([
+      {
+        name: "price",
+        value: "3abdAD3abasdlfkab"
+      }, {
+        name: "clear_price",
+        operations: [
+          {
+            "valName": "price"
+          }, {
+            type: "regex",
+            regex: "\\d(ab)",
+            modifier: "g"
+          }
+        ]
+      }
+    ]).then(function(res) {
+      console.log(res);
+      return expect(res.clear_price.length).to.be.equal(2);
+    });
+  });
   it("Current doc href", function() {
     var op;
     op = new Operation([

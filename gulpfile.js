@@ -41,6 +41,7 @@ gulp.task('optimize', ['coffee'],function(cb){
         paths: {
             q: "vendor/q"
         },
+        exclude: [ "q" ],
         name: "parser",
         out: "build/dist/dparser.min.js"
     };
