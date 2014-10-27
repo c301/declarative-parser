@@ -18,7 +18,6 @@
         if typeof @config.modifier != 'undefined'
             modifier = @config.modifier
         reg = new RegExp @config.regex, modifier
-        console.log reg, value
         if 'g' in modifier
             toReturn = []
             while ( nextRes = reg.exec( value ) ) != null
@@ -66,6 +65,8 @@
 
                 # console.log('Xpath on remote doc return', xpathResult)
                 d.resolve( xpathResult )
+              else
+                d.resolve new Error()
             
             xhr.ontimeout = (e)->
               d.resolve new Error()
@@ -125,17 +126,21 @@
       @createOperation( @config.attribute )
         .evaluate()
         .then (attribute)->
-            if !value[attribute] && value.length != undefined
-                for el in value
-                    if el then res.push getAttr(el, attribute)
-            else res = getAttr value, attribute
-            d.resolve res
+            try
+                if !value[attribute] && value.length != undefined
+                    for el in value
+                        if el then res.push getAttr(el, attribute)
+                else res = getAttr value, attribute
+
+                d.resolve res
+            catch e
+                console.log e
+                d.resolve null
     else d.resolve value
 
     d.promise
 
   operations.set_attribute = ( value )->
-    console.log "WARNING set_attribute not tested yet"
     attr = @config.attribute
     if !(value instanceof Array)
       value = [value]

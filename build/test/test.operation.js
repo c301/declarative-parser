@@ -13,7 +13,19 @@ describe("Operations testing", function() {
         return expect(res).to.equal("$301 Price");
       });
     });
-    it("preffix", function() {
+    it("prefix", function() {
+      var d, op;
+      op = new Operation({
+        "type": "xpath",
+        "xpath": "string(.//*[@class='price'])",
+        "prefix": "Price: "
+      });
+      d = op.evaluate();
+      return d.then(function(res) {
+        return expect(res).to.equal("Price: $301");
+      });
+    });
+    it("preFFix", function() {
       var d, op;
       op = new Operation({
         "type": "xpath",
@@ -25,12 +37,36 @@ describe("Operations testing", function() {
         return expect(res).to.equal("Price: $301");
       });
     });
-    it("preffix and suffix", function() {
+    it("suffix on Array", function() {
+      var d, op;
+      op = new Operation({
+        "type": "manual",
+        "value": ["one", "two", "three"],
+        "suffix": "Price: "
+      });
+      d = op.evaluate();
+      return d.then(function(res) {
+        return expect(res[0]).to.equal("onePrice: ");
+      });
+    });
+    it("prefix on Array", function() {
+      var d, op;
+      op = new Operation({
+        "type": "manual",
+        "value": ["one", "two", "three"],
+        "prefix": "Price: "
+      });
+      d = op.evaluate();
+      return d.then(function(res) {
+        return expect(res[1]).to.equal("Price: two");
+      });
+    });
+    it("prefix and suffix", function() {
       var d, op;
       op = new Operation({
         "type": "xpath",
         "xpath": "string(.//*[@class='price'])",
-        "preffix": "Price: ",
+        "prefix": "Price: ",
         "suffix": ".00"
       });
       d = op.evaluate();
@@ -43,7 +79,7 @@ describe("Operations testing", function() {
       op = new Operation({
         "type": "xpath",
         "xpath": "string(.//*[@class='pric'])",
-        "preffix": "Price: ",
+        "prefix": "Price: ",
         "default": "301"
       });
       d = op.evaluate();
@@ -57,7 +93,7 @@ describe("Operations testing", function() {
         {
           "type": "xpath",
           "xpath": "string(.//*[@class='price'])",
-          "preffix": "Price: "
+          "prefix": "Price: "
         }, {
           "type": "manual",
           "value": "Price",
@@ -81,12 +117,19 @@ describe("Operations testing", function() {
         return expect(value).to.equal("manual value");
       });
     });
-    it("Should be operation of type xpath", function() {
+    it("Pass only bool(true)", function() {
       var op;
-      op = new Operation({
-        type: "xpath"
+      op = new Operation(true);
+      return op.evaluate().then(function(value) {
+        return expect(value).to.equal(true);
       });
-      return expect(op.type).to.equal("xpath");
+    });
+    it("Pass only bool(false)", function() {
+      var op;
+      op = new Operation(false);
+      return op.evaluate().then(function(value) {
+        return expect(value).to.equal(false);
+      });
     });
     it("Testing manual operation", function() {
       var op;
@@ -97,6 +140,35 @@ describe("Operations testing", function() {
       return op.evaluate().then(function(value) {
         return expect(value).to.equal("manual value");
       });
+    });
+    it("Testing manual operation with bool(false)", function() {
+      var op;
+      op = new Operation({
+        type: "manual",
+        "default": "def_value",
+        value: false
+      });
+      return op.evaluate().then(function(value) {
+        return expect(value).to.equal("def_value");
+      });
+    });
+    it("Testing manual operation with bool(true)", function() {
+      var op;
+      op = new Operation({
+        type: "manual",
+        "default": "def_value",
+        value: true
+      });
+      return op.evaluate().then(function(value) {
+        return expect(value).to.equal(true);
+      });
+    });
+    it("Should be operation of type xpath", function() {
+      var op;
+      op = new Operation({
+        type: "xpath"
+      });
+      return expect(op.type).to.equal("xpath");
     });
     it("Evaluate regex on existing value", function() {
       var op;

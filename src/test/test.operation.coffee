@@ -9,22 +9,43 @@ describe "Operations testing", ()->
         expect res
         .to.equal "$301 Price"
 
-    it "preffix", ()->
+    it "prefix", ()->
+      op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='price'])", "prefix": "Price: " } )
+      d = op.evaluate()
+      d.then ( res )->
+        expect res
+        .to.equal "Price: $301"
+
+    it "preFFix", ()->
       op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='price'])", "preffix": "Price: " } )
       d = op.evaluate()
       d.then ( res )->
         expect res
         .to.equal "Price: $301"
 
-    it "preffix and suffix", ()->
-      op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='price'])", "preffix": "Price: ", "suffix": ".00" } )
+    it "suffix on Array", ()->
+      op = new Operation( { "type": "manual", "value": [ "one", "two", "three" ], "suffix": "Price: " } )
+      d = op.evaluate()
+      d.then ( res )->
+        expect res[0]
+        .to.equal "onePrice: "
+
+    it "prefix on Array", ()->
+      op = new Operation( { "type": "manual", "value": [ "one", "two", "three" ], "prefix": "Price: " } )
+      d = op.evaluate()
+      d.then ( res )->
+        expect res[1]
+        .to.equal "Price: two"
+
+    it "prefix and suffix", ()->
+      op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='price'])", "prefix": "Price: ", "suffix": ".00" } )
       d = op.evaluate()
       d.then ( res )->
         expect res
         .to.equal "Price: $301.00"
 
     it "default", ()->
-      op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='pric'])", "preffix": "Price: ", "default": "301" } )
+      op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='pric'])", "prefix": "Price: ", "default": "301" } )
       d = op.evaluate()
       d.then ( res )->
         expect res
@@ -32,7 +53,7 @@ describe "Operations testing", ()->
 
     it "final", ()->
       op = new Operation( [
-        { "type": "xpath", "xpath": "string(.//*[@class='price'])", "preffix": "Price: " },
+        { "type": "xpath", "xpath": "string(.//*[@class='price'])", "prefix": "Price: " },
         { "type": "manual", "value": "Price", "final" : true }
         { "type": "manual", "value": "Price 301" }
       ] )
@@ -48,16 +69,40 @@ describe "Operations testing", ()->
         expect value
         .to.equal "manual value"
 
-    it "Should be operation of type xpath", ()->
-      op = new Operation({ type: "xpath" })
-      expect op.type
-      .to.equal "xpath"
+    it "Pass only bool(true)", ()->
+      op = new Operation(true)
+      op.evaluate().then (value)->
+        expect value
+        .to.equal true
+
+    it "Pass only bool(false)", ()->
+      op = new Operation(false)
+      op.evaluate().then (value)->
+        expect value
+        .to.equal false
 
     it "Testing manual operation", ()->
       op = new Operation({ type: "manual", value: "manual value" })
       op.evaluate().then (value)->
         expect value
         .to.equal "manual value"
+
+    it "Testing manual operation with bool(false)", ()->
+      op = new Operation({ type: "manual", default: "def_value", value: false })
+      op.evaluate().then (value)->
+        expect value
+        .to.equal "def_value"
+
+    it "Testing manual operation with bool(true)", ()->
+      op = new Operation({ type: "manual", default: "def_value", value: true })
+      op.evaluate().then (value)->
+        expect value
+        .to.equal true
+
+    it "Should be operation of type xpath", ()->
+      op = new Operation({ type: "xpath" })
+      expect op.type
+      .to.equal "xpath"
 
     it "Evaluate regex on existing value", ()->
       op = new Operation({type: "regex", "regex": "(\\d+)"})

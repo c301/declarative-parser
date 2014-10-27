@@ -169,7 +169,7 @@ var __hasProp = {}.hasOwnProperty;
           };
         })(this);
       } else {
-        if (typeof this.config === "string" || typeof this.config === "number") {
+        if (typeof this.config === "string" || typeof this.config === "number" || this.config === true || this.config === false) {
           this.config = {
             type: "manual",
             value: this.config
@@ -289,12 +289,23 @@ var __hasProp = {}.hasOwnProperty;
     suffix: function(value) {
       var d;
       d = Q.defer();
-      if (value && typeof value === 'string') {
+      if (value) {
         this.createOperation(this.config.suffix).evaluate().then(function(res) {
-          if (value) {
-            return d.resolve(value + res);
-          } else {
-            return d.resolve(value);
+          var newvalue;
+          if (typeof value === 'string') {
+            d.resolve(value + res);
+          }
+          if (value instanceof Array) {
+            newvalue = value.map((function(_this) {
+              return function(el) {
+                if (el) {
+                  return el + res;
+                } else {
+                  return el;
+                }
+              };
+            })(this));
+            return d.resolve(newvalue);
           }
         });
       } else {
@@ -305,12 +316,50 @@ var __hasProp = {}.hasOwnProperty;
     preffix: function(value) {
       var d;
       d = Q.defer();
-      if (value && typeof value === 'string') {
+      if (value) {
         this.createOperation(this.config.preffix).evaluate().then(function(res) {
-          if (value) {
-            return d.resolve(res + value);
-          } else {
-            return d.resolve(value);
+          var newvalue;
+          if (typeof value === 'string') {
+            d.resolve(res + value);
+          }
+          if (value instanceof Array) {
+            newvalue = value.map((function(_this) {
+              return function(el) {
+                if (el) {
+                  return res + el;
+                } else {
+                  return el;
+                }
+              };
+            })(this));
+            return d.resolve(newvalue);
+          }
+        });
+      } else {
+        d.resolve(value);
+      }
+      return d.promise;
+    },
+    prefix: function(value) {
+      var d;
+      d = Q.defer();
+      if (value) {
+        this.createOperation(this.config.prefix).evaluate().then(function(res) {
+          var newvalue;
+          if (typeof value === 'string') {
+            d.resolve(res + value);
+          }
+          if (value instanceof Array) {
+            newvalue = value.map((function(_this) {
+              return function(el) {
+                if (el) {
+                  return res + el;
+                } else {
+                  return el;
+                }
+              };
+            })(this));
+            return d.resolve(newvalue);
           }
         });
       } else {

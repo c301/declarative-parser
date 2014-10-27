@@ -13,14 +13,20 @@
     @param aExpr Xpath expression
      */
     xpathEval: function(aNode, aExpr) {
-      var found, nsResolver, res, result, xpe;
+      var e, found, nsResolver, res, result, xpe;
       if (arguments.length === 1) {
         aExpr = aNode;
         aNode = document;
       }
       xpe = new XPathEvaluator();
       nsResolver = xpe.createNSResolver(aNode.ownerDocument === null ? aNode.documentElement : aNode.ownerDocument.documentElement);
-      result = xpe.evaluate(aExpr, aNode, nsResolver, 0, null);
+      try {
+        result = xpe.evaluate(aExpr, aNode, nsResolver, 0, null);
+      } catch (_error) {
+        e = _error;
+        console.log(e);
+        return false;
+      }
       found = [];
       if (result.resultType === 4) {
         while (res = result.iterateNext()) {

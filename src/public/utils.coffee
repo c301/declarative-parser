@@ -18,7 +18,12 @@
       xpe = new XPathEvaluator()
       nsResolver = xpe.createNSResolver( if aNode.ownerDocument == null then aNode.documentElement else aNode.ownerDocument.documentElement )
 
-      result = xpe.evaluate aExpr, aNode, nsResolver, 0, null
+      try
+        result = xpe.evaluate aExpr, aNode, nsResolver, 0, null
+      catch e
+        console.log e
+        return false
+
       found = []
       if result.resultType == 4
         while res = result.iterateNext()

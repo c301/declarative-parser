@@ -133,7 +133,7 @@
         @_evaluate = ( value )=>
           @evaluateQueue( value )
       else
-        if typeof @config == "string" || typeof @config == "number"
+        if typeof @config == "string" || typeof @config == "number" || @config == true || @config == false
         then @config =
           type: "manual"
           value: @config
@@ -147,7 +147,7 @@
         else
           @_evaluate = @operations[ @type ]
 
-  #apply suffix, preffix, etc..
+  #apply suffix, prefix, etc..
   Operation::decorate = ( value )->
     defer = Q.defer()
     toReturn = value
@@ -228,28 +228,57 @@
 
     suffix: ( value )->
       d = Q.defer()
-      if value && typeof value == 'string'
+      if value
         @createOperation( @config.suffix )
         .evaluate()
         .then ( res )->
-            if value
+          if typeof value == 'string'
               d.resolve( value + res )
-            else
-              d.resolve( value )
+          if value instanceof Array
+            newvalue = value.map (el)=>
+              if el
+                el + res
+              else
+                el
+            d.resolve( newvalue )
       else
         d.resolve( value )
       d.promise
 
     preffix: ( value )->
       d = Q.defer()
-      if value && typeof value == 'string'
+      if value
         @createOperation( @config.preffix )
         .evaluate()
         .then ( res )->
-            if value
+          if typeof value == 'string'
               d.resolve( res + value )
-            else
-              d.resolve( value )
+          if value instanceof Array
+            newvalue = value.map (el)=>
+              if el
+                res + el
+              else
+                el
+            d.resolve( newvalue )
+      else
+        d.resolve( value )
+      d.promise
+      
+    prefix: ( value )->
+      d = Q.defer()
+      if value
+        @createOperation( @config.prefix )
+        .evaluate()
+        .then ( res )->
+          if typeof value == 'string'
+              d.resolve( res + value )
+          if value instanceof Array
+            newvalue = value.map (el)=>
+              if el
+                res + el
+              else
+                el
+            d.resolve( newvalue )
       else
         d.resolve( value )
       d.promise

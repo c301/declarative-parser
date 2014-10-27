@@ -26,7 +26,6 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
         modifier = this.config.modifier;
       }
       reg = new RegExp(this.config.regex, modifier);
-      console.log(reg, value);
       if (__indexOf.call(modifier, 'g') >= 0) {
         toReturn = [];
         while ((nextRes = reg.exec(value)) !== null) {
@@ -89,6 +88,8 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
                 }
                 xpathResult = utils.xpathEval(doc, xpath);
                 return d.resolve(xpathResult);
+              } else {
+                return d.resolve(new Error());
               }
             };
             xhr.ontimeout = function(e) {
@@ -158,18 +159,24 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     if (value) {
       res = [];
       this.createOperation(this.config.attribute).evaluate().then(function(attribute) {
-        var el, _i, _len;
-        if (!value[attribute] && value.length !== void 0) {
-          for (_i = 0, _len = value.length; _i < _len; _i++) {
-            el = value[_i];
-            if (el) {
-              res.push(getAttr(el, attribute));
+        var e, el, _i, _len;
+        try {
+          if (!value[attribute] && value.length !== void 0) {
+            for (_i = 0, _len = value.length; _i < _len; _i++) {
+              el = value[_i];
+              if (el) {
+                res.push(getAttr(el, attribute));
+              }
             }
+          } else {
+            res = getAttr(value, attribute);
           }
-        } else {
-          res = getAttr(value, attribute);
+          return d.resolve(res);
+        } catch (_error) {
+          e = _error;
+          console.log(e);
+          return d.resolve(null);
         }
-        return d.resolve(res);
       });
     } else {
       d.resolve(value);
@@ -178,7 +185,6 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
   };
   operations.set_attribute = function(value) {
     var attr, k, v;
-    console.log("WARNING set_attribute not tested yet");
     attr = this.config.attribute;
     if (!(value instanceof Array)) {
       value = [value];
