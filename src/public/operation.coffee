@@ -127,12 +127,18 @@
         config.type = type
         type
 
+      #if undefined( operations was ommited ), return null
+      if @config == undefined
+        @config =
+          type: "manual"
+          value: null
       #if array of operations
       if @config instanceof Array && @config.length
         @type = "operationQueue"
         @_evaluate = ( value )=>
           @evaluateQueue( value )
       else
+        #in some case return initial value
         if typeof @config == "string" || typeof @config == "number" || @config == true || @config == false
         then @config =
           type: "manual"

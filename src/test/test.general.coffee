@@ -656,6 +656,15 @@ describe "General parsing", ()->
       expect res
       .to.have.a.property "price", "$302"
 
+  it "Parse. Value in short form. Operations was ommited", ()->
+    config = [
+      { name : "price", default: "" }
+    ]
+    parser = new Parser()
+    parser.parse( config ).then (res)->
+      expect res
+      .to.have.a.property "price", null
+
   it "Parse", ()->
     config = [
       { name : "price", operations: [

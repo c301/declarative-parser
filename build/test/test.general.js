@@ -629,6 +629,19 @@ describe("General parsing", function() {
       return expect(res).to.have.a.property("price", "$302");
     });
   });
+  it("Parse. Value in short form. Operations was ommited", function() {
+    var parser;
+    config = [
+      {
+        name: "price",
+        "default": ""
+      }
+    ];
+    parser = new Parser();
+    return parser.parse(config).then(function(res) {
+      return expect(res).to.have.a.property("price", null);
+    });
+  });
   it("Parse", function() {
     var parser;
     config = [
