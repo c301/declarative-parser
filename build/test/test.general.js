@@ -657,7 +657,7 @@ describe("General parsing", function() {
     ];
     parser = new Parser();
     return parser.parse(config).then(function(res) {
-      return expect(res).to.have.a.property("price", "$301");
+      return expect(res).to.have.a.property("price", "$ 301");
     });
   });
   return it("Pass custom decorators", function(done) {
@@ -687,7 +687,7 @@ describe("General parsing", function() {
         ]
       }
     ]).then(function(res) {
-      if (res.price !== "$301") {
+      if (res.price !== "$ 301") {
         return done(new Error("Wrong parsing result"));
       } else {
         return done();

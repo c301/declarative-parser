@@ -15,7 +15,7 @@ describe("Parser", function() {
     ];
     parser = new Parser();
     return parser.parse(config).then(function(res) {
-      return expect(res).to.have.a.property("price", "$301");
+      return expect(res).to.have.a.property("price", "$ 301");
     });
   });
   it("Set and Read attribute", function() {
@@ -34,7 +34,7 @@ describe("Parser", function() {
     parser = new Parser();
     parser.setAttr("price_name", "price");
     return parser.parse(config).then(function(res) {
-      return expect(res).to.have.a.property("price", "$301");
+      return expect(res).to.have.a.property("price", "$ 301");
     });
   });
   it("Default config", function() {
@@ -82,7 +82,7 @@ describe("Parser", function() {
     parser = new Parser();
     parser.setAttr("price_name", "price");
     return parser.parse(config).then(function(res) {
-      return expect(res).to.have.a.property("price", "$301");
+      return expect(res).to.have.a.property("price", "$ 301");
     });
   });
   it.skip("Set additional field", function() {

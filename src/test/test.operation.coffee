@@ -2,6 +2,14 @@
 
 describe "Operations testing", ()->
   describe "Check attributes of the operations", ()->
+    it "default normalize_space", ()->
+      op = new Operation( { "type": "xpath", 
+      "xpath": "string(.//*[@class='price'])" } )
+      d = op.evaluate()
+      d.then ( res )->
+        console.log res
+        expect res
+        .to.equal "$ 301"
     it "post_processing", ()->
       op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='price'])", "post_processing": {
         "type": "regex",
@@ -16,21 +24,21 @@ describe "Operations testing", ()->
       d = op.evaluate()
       d.then ( res )->
         expect res
-        .to.equal "$301 Price"
+        .to.equal "$ 301 Price"
 
     it "prefix", ()->
       op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='price'])", "prefix": "Price: " } )
       d = op.evaluate()
       d.then ( res )->
         expect res
-        .to.equal "Price: $301"
+        .to.equal "Price: $ 301"
 
     it "preFFix", ()->
       op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='price'])", "preffix": "Price: " } )
       d = op.evaluate()
       d.then ( res )->
         expect res
-        .to.equal "Price: $301"
+        .to.equal "Price: $ 301"
 
     it "suffix on Array", ()->
       op = new Operation( { "type": "manual", "value": [ "one", "two", "three" ], "suffix": "Price: " } )
@@ -51,7 +59,7 @@ describe "Operations testing", ()->
       d = op.evaluate()
       d.then ( res )->
         expect res
-        .to.equal "Price: $301.00"
+        .to.equal "Price: $ 301.00"
 
     it "default", ()->
       op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='pric'])", "prefix": "Price: ", "default": "301" } )
@@ -144,4 +152,4 @@ describe "Operations testing", ()->
       multi = new Operation ops
       multi.evaluate().then ( result )->
         expect result
-        .to.equal "$301"
+        .to.equal "$ 301"

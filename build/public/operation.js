@@ -203,6 +203,9 @@ var __hasProp = {}.hasOwnProperty;
     toReturn = value;
     found = false;
     toWait = null;
+    if (this.config && this.config.type !== "manual" && this.config.normalize_space !== false) {
+      this.config.normalize_space = true;
+    }
     _ref = Operation.prototype.decorators;
     for (decoratorName in _ref) {
       func = _ref[decoratorName];
@@ -267,21 +270,26 @@ var __hasProp = {}.hasOwnProperty;
     },
     normalize_space: function(value) {
       var val, _i, _len, _results;
-      if (value instanceof Array) {
-        _results = [];
-        for (_i = 0, _len = value.length; _i < _len; _i++) {
-          val = value[_i];
-          _results.push(val = Operation.prototype.decorators.normalize_space(val));
-        }
-        return _results;
-      } else {
-        if (value === void 0 && typeof value !== 'string') {
-          return value;
+      if (this.config.normalize_space) {
+        if (value instanceof Array) {
+          _results = [];
+          for (_i = 0, _len = value.length; _i < _len; _i++) {
+            val = value[_i];
+            _results.push(val = Operation.prototype.decorators.normalize_space.bind(this)(val));
+          }
+          return _results;
         } else {
-          value = value.trim();
-          value = value.replace(/^\s*$[\n\r]{1,}/gm, "\n");
-          return value;
+          if (value === void 0 || typeof value !== 'string') {
+            return value;
+          } else {
+            value = value.trim();
+            value = value.replace(/(\s|\t){2,}/g, ' ');
+            value = value.replace(/^\s*$[\n\r]{1,}/gm, "\n");
+            return value;
+          }
         }
+      } else {
+        return value;
       }
     },
     glue: function(value) {

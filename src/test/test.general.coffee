@@ -674,7 +674,7 @@ describe "General parsing", ()->
     parser = new Parser()
     parser.parse( config ).then (res)->
       expect res
-      .to.have.a.property "price", "$301"
+      .to.have.a.property "price", "$ 301"
 
   it "Pass custom decorators", (done)->
     @timeout 30000
@@ -693,7 +693,7 @@ describe "General parsing", ()->
         { attribute: "textContent", "num_in_array_custom": 0 }
       ] }
     ] ).then (res)->
-      if res.price != "$301"
+      if res.price != "$ 301"
         done(new Error "Wrong parsing result")
       else
         done()

@@ -1,6 +1,18 @@
 "use strict";
 describe("Operations testing", function() {
   describe("Check attributes of the operations", function() {
+    it("default normalize_space", function() {
+      var d, op;
+      op = new Operation({
+        "type": "xpath",
+        "xpath": "string(.//*[@class='price'])"
+      });
+      d = op.evaluate();
+      return d.then(function(res) {
+        console.log(res);
+        return expect(res).to.equal("$ 301");
+      });
+    });
     it("post_processing", function() {
       var d, op;
       op = new Operation({
@@ -25,7 +37,7 @@ describe("Operations testing", function() {
       });
       d = op.evaluate();
       return d.then(function(res) {
-        return expect(res).to.equal("$301 Price");
+        return expect(res).to.equal("$ 301 Price");
       });
     });
     it("prefix", function() {
@@ -37,7 +49,7 @@ describe("Operations testing", function() {
       });
       d = op.evaluate();
       return d.then(function(res) {
-        return expect(res).to.equal("Price: $301");
+        return expect(res).to.equal("Price: $ 301");
       });
     });
     it("preFFix", function() {
@@ -49,7 +61,7 @@ describe("Operations testing", function() {
       });
       d = op.evaluate();
       return d.then(function(res) {
-        return expect(res).to.equal("Price: $301");
+        return expect(res).to.equal("Price: $ 301");
       });
     });
     it("suffix on Array", function() {
@@ -86,7 +98,7 @@ describe("Operations testing", function() {
       });
       d = op.evaluate();
       return d.then(function(res) {
-        return expect(res).to.equal("Price: $301.00");
+        return expect(res).to.equal("Price: $ 301.00");
       });
     });
     it("default", function() {
@@ -231,7 +243,7 @@ describe("Operations testing", function() {
       ];
       multi = new Operation(ops);
       return multi.evaluate().then(function(result) {
-        return expect(result).to.equal("$301");
+        return expect(result).to.equal("$ 301");
       });
     });
   });

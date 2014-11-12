@@ -6,7 +6,7 @@
 )( @, (operations, Q, utils)->
   class Operation
     constructor: ( config )->
-      @parser = null                                
+      @parser = null
       @field = null
       @config = config
 
@@ -165,6 +165,9 @@
     found = false
     toWait = null
 
+    if @config && @config.type != "manual" && @config.normalize_space != false
+      @config.normalize_space = true
+
     for decoratorName, func of Operation::decorators
       if typeof @config[decoratorName] != "undefined"
         do (decoratorName, func)=>
@@ -213,17 +216,20 @@
       @decorators.postProcessing.bind(this)(value)
 
     normalize_space: ( value )->
-      if value instanceof Array
-        for val in value
-          val = Operation::decorators.normalize_space val
-      else
-        if value == undefined && typeof value != 'string'
-          value
+      if @config.normalize_space
+        if value instanceof Array
+          for val in value
+            val = Operation::decorators.normalize_space.bind(this)(val)
         else
-          value = value.trim()
-          # value = value.replace(/\s|\t{2,}/g,' ')
-          value = value.replace( /^\s*$[\n\r]{1,}/gm, "\n" );
-          value
+          if value == undefined || typeof value != 'string'
+            value
+          else
+            value = value.trim()
+            value = value.replace /(\s|\t){2,}/g, ' '
+            value = value.replace /^\s*$[\n\r]{1,}/gm, "\n"
+            value
+      else
+        value
 
     glue: ( value )->
       if value instanceof Array

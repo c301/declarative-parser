@@ -10,7 +10,7 @@ describe "Parser", ()->
     parser = new Parser()
     parser.parse( config ).then (res)->
       expect res
-      .to.have.a.property "price", "$301"
+      .to.have.a.property "price", "$ 301"
 
   it "Set and Read attribute", ()->
     config = [
@@ -22,7 +22,7 @@ describe "Parser", ()->
     parser.setAttr "price_name", "price"
     parser.parse( config ).then (res)->
       expect res
-      .to.have.a.property "price", "$301"
+      .to.have.a.property "price", "$ 301"
 
   it "Default config", ()->
     config = [
@@ -56,7 +56,7 @@ describe "Parser", ()->
     parser.setAttr "price_name", "price"
     parser.parse( config ).then (res)->
       expect res
-      .to.have.a.property "price", "$301"
+      .to.have.a.property "price", "$ 301"
 
   it.skip "Set additional field", ()->
     config = [
