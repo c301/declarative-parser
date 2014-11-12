@@ -1,6 +1,21 @@
 "use strict";
 describe("Operations testing", function() {
   describe("Check attributes of the operations", function() {
+    it("post_processing", function() {
+      var d, op;
+      op = new Operation({
+        "type": "xpath",
+        "xpath": "string(.//*[@class='price'])",
+        "post_processing": {
+          "type": "regex",
+          "regex": "(\\d+)"
+        }
+      });
+      d = op.evaluate();
+      return d.then(function(res) {
+        return expect(res).to.equal("301");
+      });
+    });
     it("suffix", function() {
       var d, op;
       op = new Operation({

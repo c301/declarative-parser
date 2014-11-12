@@ -116,7 +116,7 @@
 
     getAttr = (el, attr)->
       res = el[attr]
-      if !res && el instanceof HTMLElement
+      if !res && (el instanceof HTMLElement || el.getAttribute)
         res = el.getAttribute attr
       else
         res

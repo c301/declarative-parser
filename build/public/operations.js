@@ -150,7 +150,7 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     getAttr = function(el, attr) {
       var res;
       res = el[attr];
-      if (!res && el instanceof HTMLElement) {
+      if (!res && (el instanceof HTMLElement || el.getAttribute)) {
         return res = el.getAttribute(attr);
       } else {
         return res;

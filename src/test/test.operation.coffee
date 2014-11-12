@@ -2,6 +2,15 @@
 
 describe "Operations testing", ()->
   describe "Check attributes of the operations", ()->
+    it "post_processing", ()->
+      op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='price'])", "post_processing": {
+        "type": "regex",
+        "regex": "(\\d+)"
+      } } )
+      d = op.evaluate()
+      d.then ( res )->
+        expect res
+        .to.equal "301"
     it "suffix", ()->
       op = new Operation( { "type": "xpath", "xpath": "string(.//*[@class='price'])", "suffix": " Price" } )
       d = op.evaluate()

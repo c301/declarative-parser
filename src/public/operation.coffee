@@ -200,15 +200,17 @@
 
   Operation::operations = operations
   Operation::decorators = {
+    post_processing: (value)->
+      @decorators.postProcessing.bind(this)(value)
+
     postProcessing: ( value )->
-      if @config.postProcessing
-        @createOperation @config.postProcessing
+      operationConfig = @config.postProcessing || @config.post_processing || @config.postprocessing
+      if operationConfig
+        @createOperation operationConfig
         .evaluate value
 
     postprocessing: ( value )->
-      if @config.postprocessing
-        @createOperation @config.postprocessing
-        .evaluate value
+      @decorators.postProcessing.bind(this)(value)
 
     normalize_space: ( value )->
       if value instanceof Array

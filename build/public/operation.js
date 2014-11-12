@@ -252,15 +252,18 @@ var __hasProp = {}.hasOwnProperty;
   };
   Operation.prototype.operations = operations;
   Operation.prototype.decorators = {
+    post_processing: function(value) {
+      return this.decorators.postProcessing.bind(this)(value);
+    },
     postProcessing: function(value) {
-      if (this.config.postProcessing) {
-        return this.createOperation(this.config.postProcessing).evaluate(value);
+      var operationConfig;
+      operationConfig = this.config.postProcessing || this.config.post_processing || this.config.postprocessing;
+      if (operationConfig) {
+        return this.createOperation(operationConfig).evaluate(value);
       }
     },
     postprocessing: function(value) {
-      if (this.config.postprocessing) {
-        return this.createOperation(this.config.postprocessing).evaluate(value);
-      }
+      return this.decorators.postProcessing.bind(this)(value);
     },
     normalize_space: function(value) {
       var val, _i, _len, _results;
