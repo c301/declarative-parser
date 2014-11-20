@@ -352,6 +352,11 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     res = {};
     return res = JSON.parse(value);
   };
+  operations.parse_json = function(value) {
+    var res;
+    res = {};
+    return res = JSON.parse(value);
+  };
   operations.split = function(value) {
     if (this.config.separator) {
       return value.split(this.config.separator);

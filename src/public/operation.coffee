@@ -165,8 +165,10 @@
     found = false
     toWait = null
 
-    if @config && @config.type != "manual" && @config.normalize_space != false
-      @config.normalize_space = true
+    # set normalize_space: true by default
+   
+    # if @config && @config.type != "manual" && @config.normalize_space != false
+    #   @config.normalize_space = true
 
     for decoratorName, func of Operation::decorators
       if typeof @config[decoratorName] != "undefined"

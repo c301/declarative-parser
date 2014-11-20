@@ -203,9 +203,6 @@ var __hasProp = {}.hasOwnProperty;
     toReturn = value;
     found = false;
     toWait = null;
-    if (this.config && this.config.type !== "manual" && this.config.normalize_space !== false) {
-      this.config.normalize_space = true;
-    }
     _ref = Operation.prototype.decorators;
     for (decoratorName in _ref) {
       func = _ref[decoratorName];

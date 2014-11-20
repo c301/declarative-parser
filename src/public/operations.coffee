@@ -311,6 +311,10 @@
     res = {}
     res = JSON.parse value
 
+  operations.parse_json = ( value )->
+    res = {}
+    res = JSON.parse value
+
   operations.split = (value)->
     if @config.separator
       value.split @config.separator
