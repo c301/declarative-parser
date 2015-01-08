@@ -18,6 +18,41 @@ describe("Parser", function() {
       return expect(res).to.have.a.property("price", "$ 301");
     });
   });
+  it("Share cache between parser", function() {
+    var config, config1, parser;
+    config = [
+      {
+        name: "price",
+        persist: true,
+        operations: [
+          {
+            type: "xpath",
+            xpath: "string(.//*[@class='price'])"
+          }
+        ]
+      }
+    ];
+    config1 = [
+      {
+        name: "price",
+        operations: [
+          {
+            type: "manual",
+            value: "302"
+          }
+        ]
+      }
+    ];
+    parser = new Parser();
+    return parser.parse(config).then(function(res) {
+      var parser1;
+      parser1 = new Parser();
+      return parser1.parse(config1).then(function(res) {
+        Parser.clearCache();
+        return expect(res).to.have.a.property("price", "$ 301");
+      });
+    });
+  });
   it("Set and Read attribute", function() {
     var config, parser;
     config = [

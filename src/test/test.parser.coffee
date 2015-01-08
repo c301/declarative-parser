@@ -12,6 +12,36 @@ describe "Parser", ()->
       expect res
       .to.have.a.property "price", "$ 301"
 
+  it "Share cache between parser", ()->
+    config = [
+      {
+        name : "price",
+        persist: true,
+        operations: [
+          {
+            type: "xpath",
+            xpath: "string(.//*[@class='price'])"
+          }
+        ]
+      }
+    ]
+    config1 = [
+      { name : "price", operations: [
+          { 
+            type: "manual", 
+            value: "302" 
+          }
+        ] 
+      }
+    ]
+    parser = new Parser()
+    parser.parse( config ).then (res)->
+      parser1 = new Parser()
+      parser1.parse( config1 ).then (res)->
+        Parser.clearCache()
+        expect res
+        .to.have.a.property "price", "$ 301"
+
   it "Set and Read attribute", ()->
     config = [
       { name : "price", operations: [

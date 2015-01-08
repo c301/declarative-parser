@@ -523,26 +523,6 @@ config = [
 describe("General parsing", function() {
   var htmlText;
   htmlText = '';
-  before(function(done) {
-    this.timeout(30000);
-    return $.get("http://www.devonprop.com/victoria-rental-listings/listing/?id=1661", function(res) {
-      htmlText = res.responseText;
-      return done();
-    });
-  });
-  it("Get remote doc and parse", function(done) {
-    var parser;
-    this.timeout(5000);
-    parser = new Parser(htmlText);
-    return parser.parse(config, default_config).then(function(res) {
-      console.log(res);
-      if (res.title_text !== "Braemore Manor - 1118 Balmoral Road") {
-        return done(new Error("Wrong parsing result"));
-      } else {
-        return done();
-      }
-    });
-  });
   it("Pass custom operation", function(done) {
     var parser;
     this.timeout(5000);

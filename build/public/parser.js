@@ -32,7 +32,11 @@ var __hasProp = {}.hasOwnProperty;
         } else if (this.parsingConfig[valName]) {
           field = this.parsingConfig[valName];
           toResolve = field;
-          res = this.resolveValue(toResolve, op);
+          res = Q.fcall((function(_this) {
+            return function() {
+              return _this.resolveValue(toResolve, op);
+            };
+          })(this));
           res.then((function(_this) {
             return function(val) {
               if (toResolve.persist) {
@@ -218,6 +222,12 @@ var __hasProp = {}.hasOwnProperty;
     })(this));
     return d.promise;
   };
+  Parser.cache = {};
+  Parser.clearCache = (function(_this) {
+    return function() {
+      return Parser.cache = {};
+    };
+  })(this);
 
   /*
   @param {object|array} configs
@@ -249,7 +259,9 @@ var __hasProp = {}.hasOwnProperty;
   };
   Parser.prototype.resolveValue = function(value, operation) {
     var o;
-    if (this.result[value.name]) {
+    if (Parser.cache[value.name]) {
+      return Parser.cache[value.name];
+    } else if (this.result[value.name]) {
       return this.result[value.name];
     } else if (this.preBuildResults[value.name]) {
       return this.preBuildResults[value.name];
@@ -264,6 +276,9 @@ var __hasProp = {}.hasOwnProperty;
       o = this.createOperationForValue(value, value.operations || value.value);
       return o.evaluate(value.value).then((function(_this) {
         return function(res) {
+          if (value.persist) {
+            Parser.cache[value.name] = res;
+          }
           return _this.finalizeValue(o.getField(), res);
         };
       })(this));

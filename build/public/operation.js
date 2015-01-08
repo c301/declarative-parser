@@ -280,7 +280,7 @@ var __hasProp = {}.hasOwnProperty;
             return value;
           } else {
             value = value.trim();
-            value = value.replace(/(\s|\t){2,}/g, ' ');
+            value = value.replace(/[ \t]{2,}/g, ' ');
             value = value.replace(/^\s*$[\n\r]{1,}/gm, "\n");
             return value;
           }

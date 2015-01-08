@@ -82,6 +82,33 @@ describe("Specific Operations", function() {
       return expect(res.clear_price.length).to.be.equal(2);
     });
   });
+  it("Regex on array", function() {
+    return new Parser().parse([
+      {
+        name: "price",
+        operations: {
+          type: "manual",
+          value: ["$1234", "hi $31", null, "hello $me $2", ""]
+        }
+      }, {
+        name: "clear_price",
+        operations: [
+          {
+            "valName": "price"
+          }, {
+            type: "regex",
+            regex: "\\$(\\d+)"
+          }
+        ]
+      }
+    ]).then(function(res) {
+      console.log(res);
+      expect(res.clear_price[0]).to.be.equal('1234');
+      expect(res.clear_price[1]).to.be.equal('31');
+      expect(res.clear_price[2]).to.be.equal(null);
+      return expect(res.clear_price[3]).to.be.equal('2');
+    });
+  });
   it("Current doc href", function() {
     var op;
     op = new Operation([

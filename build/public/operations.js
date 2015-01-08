@@ -18,44 +18,55 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     }
   };
   operations.regex = function(value) {
-    var modifier, nextRes, reg, res, toReturn;
-    toReturn = null;
-    if (value) {
-      modifier = "";
-      if (typeof this.config.modifier !== 'undefined') {
-        modifier = this.config.modifier;
-      }
-      reg = new RegExp(this.config.regex, modifier);
-      if (__indexOf.call(modifier, 'g') >= 0) {
-        toReturn = [];
-        while ((nextRes = reg.exec(value)) !== null) {
-          if (nextRes) {
-            if (this.config.full) {
-              toReturn.push(nextRes);
+    var applyRegex, result, toReturn;
+    result = null;
+    applyRegex = (function(_this) {
+      return function(value) {
+        var modifier, nextRes, reg, res, toReturn;
+        toReturn = null;
+        if (value) {
+          modifier = "";
+          if (typeof _this.config.modifier !== 'undefined') {
+            modifier = _this.config.modifier;
+          }
+          reg = new RegExp(_this.config.regex, modifier);
+          if (__indexOf.call(modifier, 'g') >= 0) {
+            toReturn = [];
+            while ((nextRes = reg.exec(value)) !== null) {
+              if (nextRes) {
+                if (_this.config.full) {
+                  toReturn.push(nextRes);
+                } else {
+                  toReturn.push(nextRes[1]);
+                }
+              }
+            }
+          } else {
+            res = reg.exec(value);
+            if (_this.config.full) {
+              if (res) {
+                toReturn = res;
+              } else {
+                toReturn = null;
+              }
             } else {
-              toReturn.push(nextRes[1]);
+              if (res) {
+                toReturn = res[1];
+              } else {
+                toReturn = null;
+              }
             }
           }
-        }
-      } else {
-        res = reg.exec(value);
-        if (this.config.full) {
-          if (res) {
-            toReturn = res;
-          } else {
-            toReturn = null;
-          }
+          return toReturn;
         } else {
-          if (res) {
-            toReturn = res[1];
-          } else {
-            toReturn = null;
-          }
+          return null;
         }
-      }
-      return toReturn;
+      };
+    })(this);
+    if (Array.isArray(value)) {
+      return toReturn = value.map(applyRegex);
     } else {
-      return null;
+      return applyRegex(value);
     }
   };
   operations.xpath = function(value) {

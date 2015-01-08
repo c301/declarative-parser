@@ -34,7 +34,9 @@
           #   name: field.name,
           #   operations: field.operations || field.value
           # }
-          res = @resolveValue toResolve, op
+          res = Q.fcall ()=>
+            @resolveValue toResolve, op
+          
           res.then (val)=>
             if( toResolve.persist )
               @result[valName] = val
@@ -196,6 +198,12 @@
 
     d.promise
 
+  #set initial empty cache
+  Parser.cache = {}
+  #set empty cache
+  Parser.clearCache = ()=>
+    Parser.cache={}
+
   ###
   @param {object|array} configs
   @returns {object}
@@ -222,7 +230,9 @@
 
   Parser::resolveValue = ( value, operation )->
     # console.log "====  prebuildresult exist for #{value.name}",  @preBuildResults[value.name]
-    if @result[value.name]
+    if Parser.cache[value.name]
+      Parser.cache[value.name]
+    else if @result[value.name]
       @result[ value.name ]
     else if @preBuildResults[value.name]
       @preBuildResults[value.name]
@@ -236,6 +246,9 @@
       o = @createOperationForValue value, value.operations || value.value
       o.evaluate( value.value )
       .then ( res )=>
+          if(value.persist)
+            Parser.cache[value.name] = res
+
           @finalizeValue( o.getField(), res )
 
   Parser::afterParse = ()->

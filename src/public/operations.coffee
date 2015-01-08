@@ -12,29 +12,36 @@
 
   #we can pass existing value (from previos operation) as argument
   operations.regex= ( value )->
-    toReturn = null
-    if value
-        modifier = ""
-        if typeof @config.modifier != 'undefined'
-            modifier = @config.modifier
-        reg = new RegExp @config.regex, modifier
-        if 'g' in modifier
-            toReturn = []
-            while ( nextRes = reg.exec( value ) ) != null
-                if nextRes 
-                    if @config.full 
-                        toReturn.push nextRes
-                    else
-                        toReturn.push nextRes[1]
-        else
-            res = reg.exec( value )
-            if @config.full 
-                if res then toReturn = res else toReturn = null
-            else
-                if res then toReturn = res[1] else toReturn = null
-        toReturn
+    result = null
+    applyRegex = ( value )=>
+      toReturn = null
+      if value
+          modifier = ""
+          if typeof @config.modifier != 'undefined'
+              modifier = @config.modifier
+          reg = new RegExp @config.regex, modifier
+          if 'g' in modifier
+              toReturn = []
+              while ( nextRes = reg.exec( value ) ) != null
+                  if nextRes 
+                      if @config.full 
+                          toReturn.push nextRes
+                      else
+                          toReturn.push nextRes[1]
+          else
+              res = reg.exec( value )
+              if @config.full 
+                  if res then toReturn = res else toReturn = null
+              else
+                  if res then toReturn = res[1] else toReturn = null
+          toReturn
+      else
+        null
+    if Array.isArray value 
+      toReturn = value.map applyRegex
     else
-      null
+      applyRegex value
+
 
   #we have to use this.getDoc() in order to use right document
   operations.xpath= ( value )->
