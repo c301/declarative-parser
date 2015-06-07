@@ -162,9 +162,9 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
       var res;
       res = el[attr];
       if (!res && (el instanceof HTMLElement || el.getAttribute)) {
-        return res = el.getAttribute(attr);
+        return res = el.getAttribute(attr || null);
       } else {
-        return res;
+        return res || null;
       }
     };
     if (value) {

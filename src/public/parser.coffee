@@ -13,7 +13,7 @@
       @value = ( valName, op, cb )->
         valResult = @result[ valName ]
         # console.log 'valResult for ', valName, valResult
-        if valResult
+        if valResult != undefined
           # console.log "parser.value return", valResult
           if cb && typeof cb == 'function'
               cb( valResult )
@@ -67,6 +67,7 @@
       config = config || document
 
       @config = config
+      @config.prompt = @config.prompt || prompt.bind window
       @defaultParsingConfig = false
       @defaultValues = config.defaultValues || {} 
       @preBuildResults = config.preBuildResults || {} 
@@ -110,6 +111,8 @@
   @param {function} cb callback
   ###
   Parser::parse = ()->
+    if @config.onParsingStart
+      @config.onParsingStart()
     # console.log "Parser.parse"
     toWait = []
     d = Q.defer()
@@ -191,6 +194,8 @@
 
     _parse(config).then ()=>
       @afterParse( @result ).then ()=>
+        if @config.onParsingEnd
+          @config.onParsingEnd()
         if cb && typeof cb == 'function'
           cb @result
         else
@@ -230,6 +235,9 @@
 
   Parser::resolveValue = ( value, operation )->
     # console.log "====  prebuildresult exist for #{value.name}",  @preBuildResults[value.name]
+
+    if @config.onFieldParsing
+      @config.onFieldParsing value.name, value
     if Parser.cache[value.name]
       Parser.cache[value.name]
     else if @result[value.name]
@@ -274,9 +282,9 @@
         @defaultValues[config.name]
       else if config.required && !result
         if config.prompt_text
-          result = prompt config.prompt_text
+          result = @config.prompt config.prompt_text
         else
-          result = prompt "Please set value for " + ( if config.label then config.label else config.name )
+          result = @config.prompt "Please set value for " + ( if config.label then config.label else config.name )
       else
         result
 

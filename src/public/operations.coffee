@@ -124,9 +124,9 @@
     getAttr = (el, attr)->
       res = el[attr]
       if !res && (el instanceof HTMLElement || el.getAttribute)
-        res = el.getAttribute attr
+        res = el.getAttribute attr || null
       else
-        res
+        res || null
 
     if value
       res = []

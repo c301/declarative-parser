@@ -15,7 +15,7 @@ var __hasProp = {}.hasOwnProperty;
       this.value = function(valName, op, cb) {
         var field, res, toResolve, valResult;
         valResult = this.result[valName];
-        if (valResult) {
+        if (valResult !== void 0) {
           if (cb && typeof cb === 'function') {
             return cb(valResult);
           } else {
@@ -66,6 +66,7 @@ var __hasProp = {}.hasOwnProperty;
       var parser;
       config = config || document;
       this.config = config;
+      this.config.prompt = this.config.prompt || prompt.bind(window);
       this.defaultParsingConfig = false;
       this.defaultValues = config.defaultValues || {};
       this.preBuildResults = config.preBuildResults || {};
@@ -132,6 +133,9 @@ var __hasProp = {}.hasOwnProperty;
    */
   Parser.prototype.parse = function() {
     var cb, config, d, toWait, value, _i, _j, _len, _len1, _parse, _ref;
+    if (this.config.onParsingStart) {
+      this.config.onParsingStart();
+    }
     toWait = [];
     d = Q.defer();
     this.result = {};
@@ -212,6 +216,9 @@ var __hasProp = {}.hasOwnProperty;
     _parse(config).then((function(_this) {
       return function() {
         return _this.afterParse(_this.result).then(function() {
+          if (_this.config.onParsingEnd) {
+            _this.config.onParsingEnd();
+          }
           if (cb && typeof cb === 'function') {
             return cb(_this.result);
           } else {
@@ -259,6 +266,9 @@ var __hasProp = {}.hasOwnProperty;
   };
   Parser.prototype.resolveValue = function(value, operation) {
     var o;
+    if (this.config.onFieldParsing) {
+      this.config.onFieldParsing(value.name, value);
+    }
     if (Parser.cache[value.name]) {
       return Parser.cache[value.name];
     } else if (this.result[value.name]) {
@@ -310,9 +320,9 @@ var __hasProp = {}.hasOwnProperty;
         return this.defaultValues[config.name];
       } else if (config.required && !result) {
         if (config.prompt_text) {
-          return result = prompt(config.prompt_text);
+          return result = this.config.prompt(config.prompt_text);
         } else {
-          return result = prompt("Please set value for " + (config.label ? config.label : config.name));
+          return result = this.config.prompt("Please set value for " + (config.label ? config.label : config.name));
         }
       } else {
         return result;
