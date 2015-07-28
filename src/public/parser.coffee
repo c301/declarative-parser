@@ -7,6 +7,7 @@
   class Parser
     constructor: (config)->
       @handleConfig config
+      @parsingConfig = {}
       #reset result
       @result = {}
       #value getter
@@ -14,12 +15,14 @@
         valResult = @result[ valName ]
         # console.log 'valResult for ', valName, valResult
         if valResult != undefined
+          # value already parsed
           # console.log "parser.value return", valResult
           if cb && typeof cb == 'function'
               cb( valResult )
           else
             valResult
         else if @preBuildResults[valName]
+          # return value from pre built results, eg results of prev parsing
           # console.log "parser.value return prebuilresult", @preBuildResults[valName]
           if cb && typeof cb == 'function'
             Q( @preBuildResults[valName] || null ).then ( val )->
@@ -27,21 +30,27 @@
           else
             @preBuildResults[valName] || null
         else if @parsingConfig[valName]
+          # calculate value with config
           # console.log "Parser.value found", @parsingConfig[valName]
           field = @parsingConfig[valName]
           toResolve = field
-          # toResolve = {
-          #   name: field.name,
-          #   operations: field.operations || field.value
-          # }
           res = Q.fcall ()=>
             @resolveValue toResolve, op
           
-          res.then (val)=>
-            if( toResolve.persist )
+          res.then(
+            (val)=>
+              # if( toResolve.persist )
               @result[valName] = val
-            if cb && typeof cb == 'function'
-              cb val
+              if cb && typeof cb == 'function'
+                cb val
+            ,
+            (error)=>
+              if error.type = "StopParsingError"
+                @stopParsing()
+              else
+                if cb && typeof cb == 'function'
+                  cb false
+          )
           res
         else
           if cb && typeof cb == 'function'
@@ -176,30 +185,48 @@
                 handleDeferred.resolve()
             ,
             ( error )=>
-              console.log "Error resolveValue", error.stack
-              handleDeferred.resolve()
+              if error instanceof StopParsingError
+                console.log error.message
+                handleDeferred.reject(error)
+              else
+                console.log "Error resolveValue", error.stack
+                handleDeferred.resolve()
         )
+
         handleDeferred.promise
 
       # console.log config
-      queue = Q( handleValue config.shift() )
+      queue = Q( true )
       queue.then ()=>
         config.forEach ( value )=>
           queue = queue.then ()=> handleValue(value)
 
-        queue.then ()->
-          _parseDeferred.resolve()
+        queue.then(
+          ()->
+            _parseDeferred.resolve()
+          ,
+          (error)->
+            _parseDeferred.reject(error)
+        ) 
 
       _parseDeferred.promise
 
-    _parse(config).then ()=>
-      @afterParse( @result ).then ()=>
-        if @config.onParsingEnd
-          @config.onParsingEnd()
+    _parse(config).then(
+      ()=>
+        @afterParse( @result ).then ()=>
+          if @config.onParsingEnd
+            @config.onParsingEnd()
+          if cb && typeof cb == 'function'
+            cb @result
+          else
+            d.resolve @result
+      ,
+      (error)=>
         if cb && typeof cb == 'function'
-          cb @result
+          cb error
         else
-          d.resolve @result
+          d.reject error
+    )
 
     d.promise
 
@@ -281,10 +308,15 @@
       if @defaultValues[config.name] and !result
         @defaultValues[config.name]
       else if config.required && !result
-        if config.prompt_text
-          result = @config.prompt config.prompt_text
-        else
-          result = @config.prompt "Please set value for " + ( if config.label then config.label else config.name )
+        promptText = config.prompt_text || "Please set value for " + ( if config.label then config.label else config.name )
+
+        result = @config.prompt promptText
+        Q.when result
+        .then ( userInput )=>
+          if userInput == null
+            @stopParsing()
+          else
+            userInput
       else
         result
 
@@ -315,7 +347,6 @@
   }
 
   Parser::finalizeValue = ( config, result )->
-    defer = Q.defer()
     toReturn = result
 
     #place decorator here in right order
@@ -336,14 +367,17 @@
                 result = r
         found = true
     if !found
-      defer.resolve toReturn
+      toReturn
     else
-      toWait.then ()->
-        defer.resolve result
-    defer.promise
+      toWait.then ()-> result
 
+  Parser::stopParsing = ()->
+    error = new StopParsingError "User canceled parsing"
+    error.type = "StopParsingError"
+    throw error
 
-
+  class StopParsingError extends Error
+    constructor: ( @message ) -> super @message
 
   Parser
 )

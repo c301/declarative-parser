@@ -215,3 +215,163 @@ describe "Parser", ()->
     })
     parser.parse config, (res)->
         done()
+
+  it "Break parsing (callback)", ( done )->
+    config = [
+      {
+        "name":"property_type_0",
+        "required": true,
+        "value":""
+      }
+    ]
+
+    parser = new Parser({
+      #use custom prompt
+      prompt: ()->
+        null
+      
+    })
+    parser.parse config, (res)->
+      console.log res
+      done()
+
+  it "Break parsing (promise)", ( done )->
+    config = [
+      {
+        "name":"property_type_0",
+        "required": true,
+        "value":""
+      }
+    ]
+
+    parser = new Parser({
+      #use custom prompt
+      prompt: ()->
+        null
+      
+    })
+    parser.parse config
+      .then(
+        null
+        ,
+        (error)->
+          console.log error.message
+          done()
+      )
+
+  it "Break parsing on implicit parsing (promise)", ( done )->
+    config = [
+      {
+        "name":"property_type_1",
+        "operations": [
+          {
+            "valName": "property_type_0"
+          }
+        ]
+      },
+      {
+        "name":"property_type_0",
+        "required": true,
+        "value":""
+      }
+    ]
+
+    parser = new Parser({
+      #use custom prompt
+      prompt: ()->
+        console.log 'prompt'
+        null
+    })
+    parser.parse config
+      .then(
+        null
+        ,
+        (error)->
+          console.log error.message
+          done()
+      )
+
+  it "Break parsing on implicit parsing (htmp_template)", ( done )->
+    config = [
+      {
+        "name":"property_type_1",
+        "operations": [
+          {
+            "template": "{:property_type_0:}{:property_type_0:}"
+          }
+        ]
+      },
+      {
+        "name":"property_type_0",
+        "required": true,
+        "value":""
+      }
+    ]
+
+    parser = new Parser({
+      #use custom prompt
+      prompt: ()->
+        console.log 'prompt'
+        null
+    })
+    parser.parse config
+      .then(
+        null
+        ,
+        (error)->
+          console.log error.message
+          done()
+      )
+
+  it "Break parsing on implicit parsing (default parsing config)", ( done )->
+    config = [
+      {
+        "name":"property_type_1",
+        "operations": [
+          {
+            "type": "manual",
+            "value": false
+          }
+        ]
+      },
+      {
+        "name":"property_type_0",
+        "required": true,
+        "operations": [
+          {
+            "type": "manual",
+            "value": false
+          }
+        ]
+      }
+    ]
+    defaultConfig = [
+      {
+        "name":"property_type_1",
+        "operations": [
+          {
+            "template": "{:property_type_0:}"
+          }
+        ]
+      },
+      {
+        "name":"property_type_2",
+        "value":"hi2"
+      }
+    ]
+    parser = new Parser({
+      defaultConfig: defaultConfig
+      #use custom prompt
+      prompt: ()->
+        console.log 'prompt'
+        null
+    })
+    parser.parse config, defaultConfig
+      .then(
+        (val)->
+          console.log "done", val
+        ,
+        (error)->
+          console.log error.message
+          done()
+      )

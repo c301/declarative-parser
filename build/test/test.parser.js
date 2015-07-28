@@ -237,7 +237,7 @@ describe("Parser", function() {
       }
     });
   });
-  return it("Debug", function(done) {
+  it("Debug", function(done) {
     var config, parser;
     config = [
       {
@@ -258,6 +258,147 @@ describe("Parser", function() {
       debug: true
     });
     return parser.parse(config, function(res) {
+      return done();
+    });
+  });
+  it("Break parsing (callback)", function(done) {
+    var config, parser;
+    config = [
+      {
+        "name": "property_type_0",
+        "required": true,
+        "value": ""
+      }
+    ];
+    parser = new Parser({
+      prompt: function() {
+        return null;
+      }
+    });
+    return parser.parse(config, function(res) {
+      console.log(res);
+      return done();
+    });
+  });
+  it("Break parsing (promise)", function(done) {
+    var config, parser;
+    config = [
+      {
+        "name": "property_type_0",
+        "required": true,
+        "value": ""
+      }
+    ];
+    parser = new Parser({
+      prompt: function() {
+        return null;
+      }
+    });
+    return parser.parse(config).then(null, function(error) {
+      console.log(error.message);
+      return done();
+    });
+  });
+  it("Break parsing on implicit parsing (promise)", function(done) {
+    var config, parser;
+    config = [
+      {
+        "name": "property_type_1",
+        "operations": [
+          {
+            "valName": "property_type_0"
+          }
+        ]
+      }, {
+        "name": "property_type_0",
+        "required": true,
+        "value": ""
+      }
+    ];
+    parser = new Parser({
+      prompt: function() {
+        console.log('prompt');
+        return null;
+      }
+    });
+    return parser.parse(config).then(null, function(error) {
+      console.log(error.message);
+      return done();
+    });
+  });
+  it("Break parsing on implicit parsing (htmp_template)", function(done) {
+    var config, parser;
+    config = [
+      {
+        "name": "property_type_1",
+        "operations": [
+          {
+            "template": "{:property_type_0:}{:property_type_0:}"
+          }
+        ]
+      }, {
+        "name": "property_type_0",
+        "required": true,
+        "value": ""
+      }
+    ];
+    parser = new Parser({
+      prompt: function() {
+        console.log('prompt');
+        return null;
+      }
+    });
+    return parser.parse(config).then(null, function(error) {
+      console.log(error.message);
+      return done();
+    });
+  });
+  return it("Break parsing on implicit parsing (default parsing config)", function(done) {
+    var config, defaultConfig, parser;
+    config = [
+      {
+        "name": "property_type_1",
+        "operations": [
+          {
+            "type": "manual",
+            "value": false
+          }
+        ]
+      }, {
+        "name": "property_type_0",
+        "required": true,
+        "operations": [
+          {
+            "type": "manual",
+            "value": false
+          }
+        ]
+      }
+    ];
+    defaultConfig = [
+      {
+        "name": "property_type_1",
+        "operations": [
+          {
+            "template": "{:property_type_0:}"
+          }
+        ]
+      }, {
+        "name": "property_type_2",
+        "value": "hi2"
+      }
+    ];
+    parser = new Parser({
+      defaultConfig: defaultConfig,
+      prompt: function() {
+        console.log('prompt');
+        return null;
+      }
+    });
+    return parser.parse(config, defaultConfig).then(function(val) {
+      return console.log("done", val);
+    }, function(error) {
+      console.log(error.message);
       return done();
     });
   });

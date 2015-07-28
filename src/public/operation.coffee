@@ -50,21 +50,24 @@
                     ( res )=>
                       cb res
                       d.resolve( res )
-                  ,
-                  ( error )=>
-                    val = @.getField()
-                    val = if val then val.name else "undefined"
-                    console.log "Error during decoration #{val}: #{@.type}", error.stack
-                    cb result
-                    d.resolve result
+                    ,
+                    ( error )=>
+                      val = @.getField()
+                      val = if val then val.name else "undefined"
+                      console.log "Error during decoration #{val}: #{@.type}", error.stack
+                      cb result
+                      d.resolve result
                   )
               ,
               ( error )=>
-                val = @.getField()
-                val = if val then val.name else "undefined"
-                console.log "Error in #{val}: #{@.type}", error.stack
-                cb value
-                d.resolve value
+                if error.type = "StopParsingError"
+                  d.reject error
+                else
+                  val = @.getField()
+                  val = if val then val.name else "undefined"
+                  console.log "Error in #{val}: #{@.type}", error.stack
+                  cb value
+                  d.resolve value
               )
 
         d.promise

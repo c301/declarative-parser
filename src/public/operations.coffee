@@ -151,10 +151,35 @@
     attr = @config.attribute
     if !(value instanceof Array)
       value = [value]
-    for own k, v of attr
-      value.forEach (el)->
-        el[k] = v
-    value
+
+    toWait = []
+
+    value.forEach (el)=>
+      d = Q.defer()
+
+      finalAttrs = {}
+      calculateAttr = []
+
+      for own k, v of attr
+        do ( k, v )=>
+          def = @createOperation v
+          .evaluate(el).then (finalValue)=>
+            finalAttrs[k] = finalValue
+
+          calculateAttr.push def
+
+      Q.allSettled calculateAttr
+      .then ()=>
+        for own k, v of finalAttrs
+          el[k] = v
+        d.resolve()
+
+      toWait.push d.promise
+
+    Q.allSettled toWait
+
+
+
 
   # represents "if" statements
   operations.switchOf = ( value )->
@@ -188,25 +213,17 @@
 
   #evaluate html template
   operations.html_template = ()->
-    d = Q.defer()
     html = @config.template
-    toWait = []
+    toWait = Q(true)
     for fname in html.match( /\{:(.+?):\}/ig )
       do ( fname )=>
         el = /\{:(.+?):\}/.exec(fname)[1]
         # console.log "HTML template getting field #{fname}, #{el}"
-        def = Q( @getValue el).then (val)->
-          # console.log "HTML template #{fname}, #{val}"
+        toWait = toWait.then (val)=>
           html = html.replace fname, val || ''
+          Q( @getValue el )
 
-        toWait.push def
-
-    Q.allSettled toWait
-    .then ()=>
-        # console.log "template done", html
-        d.resolve html
-
-    d.promise
+    toWait.then ()-> html
 
   # operations.jsonpath = (value)->
   #   console.log("JSONPath",value, @config.jsonpath);
@@ -253,13 +270,11 @@
     res
 
   operations.parsed_val = ()->
-    d = Q.defer()
-    valueName = @config.valName || @config.name 
+    valueName = @config.valName || @config.name
     Q( @getValue( valueName ) ).then (value)=>
-      if typeof value == 'undefined' 
+      if typeof value == 'undefined'
         console.log("Warning: #{valueName} not found")
-      d.resolve value
-    d.promise
+      value
 
   operations.concatenation = ()->
     parts = @config.parts

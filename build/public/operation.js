@@ -65,11 +65,15 @@ var __hasProp = {}.hasOwnProperty;
             })(this), (function(_this) {
               return function(error) {
                 var val;
-                val = _this.getField();
-                val = val ? val.name : "undefined";
-                console.log("Error in " + val + ": " + _this.type, error.stack);
-                cb(value);
-                return d.resolve(value);
+                if (error.type = "StopParsingError") {
+                  return d.reject(error);
+                } else {
+                  val = _this.getField();
+                  val = val ? val.name : "undefined";
+                  console.log("Error in " + val + ": " + _this.type, error.stack);
+                  cb(value);
+                  return d.resolve(value);
+                }
               };
             })(this));
           }

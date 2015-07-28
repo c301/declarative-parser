@@ -1,4 +1,5 @@
-var __hasProp = {}.hasOwnProperty;
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(root, factory) {
   if (typeof define === "function" && define.amd) {
@@ -7,10 +8,11 @@ var __hasProp = {}.hasOwnProperty;
     return root.Parser = factory(root.operation, root.Q);
   }
 })(this, function(operation, Q) {
-  var Parser;
+  var Parser, StopParsingError;
   Parser = (function() {
     function Parser(config) {
       this.handleConfig(config);
+      this.parsingConfig = {};
       this.result = {};
       this.value = function(valName, op, cb) {
         var field, res, toResolve, valResult;
@@ -39,11 +41,19 @@ var __hasProp = {}.hasOwnProperty;
           })(this));
           res.then((function(_this) {
             return function(val) {
-              if (toResolve.persist) {
-                _this.result[valName] = val;
-              }
+              _this.result[valName] = val;
               if (cb && typeof cb === 'function') {
                 return cb(val);
+              }
+            };
+          })(this), (function(_this) {
+            return function(error) {
+              if (error.type = "StopParsingError") {
+                return _this.stopParsing();
+              } else {
+                if (cb && typeof cb === 'function') {
+                  return cb(false);
+                }
               }
             };
           })(this));
@@ -194,12 +204,17 @@ var __hasProp = {}.hasOwnProperty;
               return handleDeferred.resolve();
             }
           }, function(error) {
-            console.log("Error resolveValue", error.stack);
-            return handleDeferred.resolve();
+            if (error instanceof StopParsingError) {
+              console.log(error.message);
+              return handleDeferred.reject(error);
+            } else {
+              console.log("Error resolveValue", error.stack);
+              return handleDeferred.resolve();
+            }
           });
           return handleDeferred.promise;
         };
-        queue = Q(handleValue(config.shift()));
+        queue = Q(true);
         queue.then(function() {
           config.forEach(function(value) {
             return queue = queue.then(function() {
@@ -208,6 +223,8 @@ var __hasProp = {}.hasOwnProperty;
           });
           return queue.then(function() {
             return _parseDeferred.resolve();
+          }, function(error) {
+            return _parseDeferred.reject(error);
           });
         });
         return _parseDeferred.promise;
@@ -225,6 +242,14 @@ var __hasProp = {}.hasOwnProperty;
             return d.resolve(_this.result);
           }
         });
+      };
+    })(this), (function(_this) {
+      return function(error) {
+        if (cb && typeof cb === 'function') {
+          return cb(error);
+        } else {
+          return d.reject(error);
+        }
       };
     })(this));
     return d.promise;
@@ -316,14 +341,21 @@ var __hasProp = {}.hasOwnProperty;
       }
     },
     required: function(config, result) {
+      var promptText;
       if (this.defaultValues[config.name] && !result) {
         return this.defaultValues[config.name];
       } else if (config.required && !result) {
-        if (config.prompt_text) {
-          return result = this.config.prompt(config.prompt_text);
-        } else {
-          return result = this.config.prompt("Please set value for " + (config.label ? config.label : config.name));
-        }
+        promptText = config.prompt_text || "Please set value for " + (config.label ? config.label : config.name);
+        result = this.config.prompt(promptText);
+        return Q.when(result).then((function(_this) {
+          return function(userInput) {
+            if (userInput === null) {
+              return _this.stopParsing();
+            } else {
+              return userInput;
+            }
+          };
+        })(this));
       } else {
         return result;
       }
@@ -341,8 +373,7 @@ var __hasProp = {}.hasOwnProperty;
     }
   };
   Parser.prototype.finalizeValue = function(config, result) {
-    var defer, found, func, handlerName, toReturn, toWait, _ref;
-    defer = Q.defer();
+    var found, func, handlerName, toReturn, toWait, _ref;
     toReturn = result;
     found = false;
     toWait = null;
@@ -369,13 +400,29 @@ var __hasProp = {}.hasOwnProperty;
       }
     }
     if (!found) {
-      defer.resolve(toReturn);
+      return toReturn;
     } else {
-      toWait.then(function() {
-        return defer.resolve(result);
+      return toWait.then(function() {
+        return result;
       });
     }
-    return defer.promise;
   };
+  Parser.prototype.stopParsing = function() {
+    var error;
+    error = new StopParsingError("User canceled parsing");
+    error.type = "StopParsingError";
+    throw error;
+  };
+  StopParsingError = (function(_super) {
+    __extends(StopParsingError, _super);
+
+    function StopParsingError(message) {
+      this.message = message;
+      StopParsingError.__super__.constructor.call(this, this.message);
+    }
+
+    return StopParsingError;
+
+  })(Error);
   return Parser;
 });

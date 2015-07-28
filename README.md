@@ -47,6 +47,7 @@ new Parser( parserConfig ).parse( config ).then( function( result ){
 Parser Config
 =============
 - "debug" - if positive, output debug information to console
+- "prompt" - JS function to ask for user input ( native `window.prompt` used by default). Return `null` to break parsing
 
 General attributes of the operations:
 -------------------------------------

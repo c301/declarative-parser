@@ -195,19 +195,42 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     return d.promise;
   };
   operations.set_attribute = function(value) {
-    var attr, k, v;
+    var attr, toWait;
     attr = this.config.attribute;
     if (!(value instanceof Array)) {
       value = [value];
     }
-    for (k in attr) {
-      if (!__hasProp.call(attr, k)) continue;
-      v = attr[k];
-      value.forEach(function(el) {
-        return el[k] = v;
-      });
-    }
-    return value;
+    toWait = [];
+    value.forEach((function(_this) {
+      return function(el) {
+        var calculateAttr, d, finalAttrs, k, v, _fn;
+        d = Q.defer();
+        finalAttrs = {};
+        calculateAttr = [];
+        _fn = function(k, v) {
+          var def;
+          def = _this.createOperation(v).evaluate(el).then(function(finalValue) {
+            return finalAttrs[k] = finalValue;
+          });
+          return calculateAttr.push(def);
+        };
+        for (k in attr) {
+          if (!__hasProp.call(attr, k)) continue;
+          v = attr[k];
+          _fn(k, v);
+        }
+        Q.allSettled(calculateAttr).then(function() {
+          for (k in finalAttrs) {
+            if (!__hasProp.call(finalAttrs, k)) continue;
+            v = finalAttrs[k];
+            el[k] = v;
+          }
+          return d.resolve();
+        });
+        return toWait.push(d.promise);
+      };
+    })(this));
+    return Q.allSettled(toWait);
   };
   operations.switchOf = function(value) {
     var execPosOrNeg;
@@ -239,31 +262,27 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     }
   };
   operations.html_template = function() {
-    var d, fname, html, toWait, _fn, _i, _len, _ref;
-    d = Q.defer();
+    var fname, html, toWait, _fn, _i, _len, _ref;
     html = this.config.template;
-    toWait = [];
+    toWait = Q(true);
     _ref = html.match(/\{:(.+?):\}/ig);
     _fn = (function(_this) {
       return function(fname) {
-        var def, el;
+        var el;
         el = /\{:(.+?):\}/.exec(fname)[1];
-        def = Q(_this.getValue(el)).then(function(val) {
-          return html = html.replace(fname, val || '');
+        return toWait = toWait.then(function(val) {
+          html = html.replace(fname, val || '');
+          return Q(_this.getValue(el));
         });
-        return toWait.push(def);
       };
     })(this);
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       fname = _ref[_i];
       _fn(fname);
     }
-    Q.allSettled(toWait).then((function(_this) {
-      return function() {
-        return d.resolve(html);
-      };
-    })(this));
-    return d.promise;
+    return toWait.then(function() {
+      return html;
+    });
   };
   operations.values_to_map = function(value) {};
   operations.current_document = function() {
@@ -280,18 +299,16 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     return res;
   };
   operations.parsed_val = function() {
-    var d, valueName;
-    d = Q.defer();
+    var valueName;
     valueName = this.config.valName || this.config.name;
-    Q(this.getValue(valueName)).then((function(_this) {
+    return Q(this.getValue(valueName)).then((function(_this) {
       return function(value) {
         if (typeof value === 'undefined') {
           console.log("Warning: " + valueName + " not found");
         }
-        return d.resolve(value);
+        return value;
       };
     })(this));
-    return d.promise;
   };
   operations.concatenation = function() {
     var d, glue, part, parts, toWait, _fn, _i, _len;
