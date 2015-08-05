@@ -219,9 +219,10 @@
       do ( fname )=>
         el = /\{:(.+?):\}/.exec(fname)[1]
         # console.log "HTML template getting field #{fname}, #{el}"
-        toWait = toWait.then (val)=>
-          html = html.replace fname, val || ''
-          Q( @getValue el )
+        toWait = toWait.then ()=>
+          Q( @getValue el ).then (val)=>
+            # console.log 'got el', el, fname, val
+            html = html.replace fname, val || ''
 
     toWait.then ()-> html
 
