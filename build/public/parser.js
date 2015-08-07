@@ -68,7 +68,11 @@ var __hasProp = {}.hasOwnProperty,
         return this[attrName] = value;
       };
       this.getAttr = function(attrName) {
-        return this[attrName] || null;
+        if (this[attrName] === void 0 || this[attrName] === null || this[attrName] === false) {
+          return null;
+        } else {
+          return this[attrName];
+        }
       };
     }
 
@@ -180,6 +184,9 @@ var __hasProp = {}.hasOwnProperty,
         _parseDeferred = Q.defer();
         handleValue = function(value) {
           var handleDeferred;
+          if (_this.debug) {
+            value.debug = _this.debug;
+          }
           handleDeferred = Q.defer();
           _this.log("= Parser: calculating " + value.name + ". Config:", value);
           Q.fcall(function() {

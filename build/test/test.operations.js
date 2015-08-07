@@ -38,6 +38,33 @@ describe("Specific Operations", function() {
       return expect(res).to.have.a.property("clear_price", "301");
     });
   });
+  it("Xpath", function() {
+    var config, parser;
+    config = [
+      {
+        name: "class_name",
+        operations: [
+          {
+            type: "manual",
+            value: "price"
+          }
+        ]
+      }, {
+        "name": "xpathing",
+        "operations": [
+          {
+            "type": "xpath",
+            "xpath": "string(.//*[@class='{:class_name:}'][{:index:}])"
+          }
+        ]
+      }
+    ];
+    parser = new Parser();
+    parser.setAttr("index", 1);
+    return parser.parse(config).then(function(res) {
+      return expect(res).to.have.a.property("xpathing", "$ 301");
+    });
+  });
   it("Regex", function() {
     return new Parser().parse([
       {
@@ -206,7 +233,7 @@ describe("Specific Operations", function() {
       return expect(res).to.equal("value2");
     });
   });
-  return it("concatenation", function() {
+  it("concatenation", function() {
     var op1;
     op1 = new Operation([
       {
@@ -237,6 +264,33 @@ describe("Specific Operations", function() {
     ]);
     return op1.evaluate().then(function(res) {
       return expect(res).to.equal("val1, val2, val3");
+    });
+  });
+  return it("html_template", function() {
+    var config, parser;
+    config = [
+      {
+        name: "price",
+        operations: [
+          {
+            type: "xpath",
+            xpath: "string(.//*[@class='price'])"
+          }
+        ]
+      }, {
+        "name": "templating",
+        "operations": [
+          {
+            "type": "html_template",
+            "template": "check index {:index:} and price {:price:}"
+          }
+        ]
+      }
+    ];
+    parser = new Parser();
+    parser.setAttr("index", "3");
+    return parser.parse(config).then(function(res) {
+      return expect(res).to.have.a.property("templating", "check index 3 and price $ 301");
     });
   });
 });

@@ -70,79 +70,57 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     }
   };
   operations.xpath = function(value) {
-    var d, el, fname, m, parser, xpath, _i, _len;
+    var xpath;
     xpath = this.config.xpath;
     if (xpath) {
-      if (this.config.document_url) {
-        d = Q.defer();
-        this.createOperation(this.config.document_url).evaluate().then((function(_this) {
-          return function(result) {
-            var xhr;
-            xhr = new XMLHttpRequest();
-            xhr.open('GET', result, true);
-            xhr.onload = function(e) {
-              var doc, el, fname, m, parser, txt, xpathResult, _i, _len;
-              if (xhr.status === 200) {
-                txt = xhr.responseText;
-                parser = new DOMParser();
-                doc = parser.parseFromString(txt, "text/html");
-                m = xpath.match(/\{:(.+?):\}/ig);
-                if (m) {
-                  parser = _this.getParser();
-                  for (_i = 0, _len = m.length; _i < _len; _i++) {
-                    fname = m[_i];
-                    el = /\{:(.+?):\}/.exec(fname)[1];
-                    if (parser) {
-                      xpath = xpath.replace(fname, parser.getAttr(el));
-                    }
-                  }
+      return this.substitudeAttrAndValues(xpath).then((function(_this) {
+        return function(xpath) {
+          var d;
+          if (_this.config.document_url) {
+            d = Q.defer();
+            _this.createOperation(_this.config.document_url).evaluate().then(function(result) {
+              var xhr;
+              xhr = new XMLHttpRequest();
+              xhr.open('GET', result, true);
+              xhr.onload = function(e) {
+                var doc, parser, txt, xpathResult;
+                if (xhr.status === 200) {
+                  txt = xhr.responseText;
+                  parser = new DOMParser();
+                  doc = parser.parseFromString(txt, "text/html");
+                  return xpathResult = utils.xpathEval(doc, xpath);
+                } else {
+                  return d.resolve(new Error());
                 }
-                xpathResult = utils.xpathEval(doc, xpath);
-                return d.resolve(xpathResult);
-              } else {
+              };
+              xhr.ontimeout = function(e) {
                 return d.resolve(new Error());
+              };
+              xhr.onerror = function(e) {
+                return d.resolve(new Error());
+              };
+              return xhr.send();
+            });
+            return d.promise;
+          } else {
+            if (_this.config.doc) {
+              d = Q.defer();
+              _this.createOperation(_this.config.doc).evaluate(value).then(function(doc) {
+                var res;
+                res = utils.xpathEval(doc, xpath);
+                return d.resolve(res);
+              });
+              return d.promise;
+            } else {
+              if (value instanceof HTMLDocument || value instanceof XMLDocument) {
+                return utils.xpathEval(value, xpath);
+              } else {
+                return utils.xpathEval(_this.getDoc(), xpath);
               }
-            };
-            xhr.ontimeout = function(e) {
-              return d.resolve(new Error());
-            };
-            xhr.onerror = function(e) {
-              return d.resolve(new Error());
-            };
-            return xhr.send();
-          };
-        })(this));
-        return d.promise;
-      } else {
-        m = xpath.match(/\{:(.+?):\}/ig);
-        if (m) {
-          parser = this.getParser();
-          for (_i = 0, _len = m.length; _i < _len; _i++) {
-            fname = m[_i];
-            el = /\{:(.+?):\}/.exec(fname)[1];
-            if (parser) {
-              xpath = xpath.replace(fname, parser.getAttr(el));
             }
           }
-        }
-        if (this.config.doc) {
-          d = Q.defer();
-          this.createOperation(this.config.doc).evaluate(value).then((function(_this) {
-            return function(doc) {
-              var res;
-              res = utils.xpathEval(doc, xpath);
-              return d.resolve(res);
-            };
-          })(this));
-          return d.promise;
-        } else {
-          if (value instanceof HTMLDocument || value instanceof XMLDocument) {
-            return utils.xpathEval(value, xpath);
-          } else {
-            return utils.xpathEval(this.getDoc(), xpath);
-          }
-        }
-      }
+        };
+      })(this));
     } else {
       return null;
     }
@@ -262,28 +240,9 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     }
   };
   operations.html_template = function() {
-    var fname, html, toWait, _fn, _i, _len, _ref;
+    var html;
     html = this.config.template;
-    toWait = Q(true);
-    _ref = html.match(/\{:(.+?):\}/ig);
-    _fn = (function(_this) {
-      return function(fname) {
-        var el;
-        el = /\{:(.+?):\}/.exec(fname)[1];
-        return toWait = toWait.then(function() {
-          return Q(_this.getValue(el)).then(function(val) {
-            return html = html.replace(fname, val || '');
-          });
-        });
-      };
-    })(this);
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      fname = _ref[_i];
-      _fn(fname);
-    }
-    return toWait.then(function() {
-      return html;
-    });
+    return this.substitudeAttrAndValues(html);
   };
   operations.values_to_map = function(value) {};
   operations.current_document = function() {

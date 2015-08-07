@@ -68,7 +68,10 @@
         @[attrName] = value
 
       @getAttr = (attrName)->
-        @[attrName] || null
+        if @[attrName] == undefined || @[attrName] == null || @[attrName] == false
+          null
+        else
+          @[attrName]
 
     #set configuration and default values
     handleConfig: (config)->
@@ -156,6 +159,9 @@
       _parseDeferred = Q.defer()
 
       handleValue = ( value )=>
+        if @debug
+          value.debug = @debug
+
         handleDeferred = Q.defer()
 
         @log "= Parser: calculating #{value.name}. Config:", value

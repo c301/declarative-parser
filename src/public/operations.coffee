@@ -47,65 +47,49 @@
   operations.xpath= ( value )->
     xpath = @config.xpath
     if xpath
-      if @config.document_url
-        # console.log("Xpath: document_url detected")
-        d = Q.defer()
-        @createOperation @config.document_url
-          .evaluate()
-          .then ( result )=>
-            # console.log("Xpath: document_url %s", result)
-            xhr = new XMLHttpRequest()
-            xhr.open('GET', result, true)
-            xhr.onload = (e)=>
-              if xhr.status == 200
-                txt = xhr.responseText
-                parser = new DOMParser()
-                doc = parser.parseFromString( txt, "text/html" )
-                m = xpath.match( /\{:(.+?):\}/ig )
-                if m
-                  parser = @getParser()
-                  for fname in m
-                    el = /\{:(.+?):\}/.exec(fname)[1]
-                    if parser
-                      xpath = xpath.replace fname, parser.getAttr( el )
-                xpathResult = utils.xpathEval doc, xpath
+      @substitudeAttrAndValues xpath
+        .then (xpath)=>
+          if @config.document_url
+            # console.log("Xpath: document_url detected")
+            d = Q.defer()
+            @createOperation @config.document_url
+              .evaluate()
+              .then ( result )=>
+                # console.log("Xpath: document_url %s", result)
+                xhr = new XMLHttpRequest()
+                xhr.open('GET', result, true)
+                xhr.onload = (e)=>
+                  if xhr.status == 200
+                    txt = xhr.responseText
+                    parser = new DOMParser()
+                    doc = parser.parseFromString( txt, "text/html" )
+                    xpathResult = utils.xpathEval doc, xpath
+                  else
+                    d.resolve new Error()
+                
+                xhr.ontimeout = (e)->
+                  d.resolve new Error()
+                
+                xhr.onerror = (e)->
+                  d.resolve new Error()
+                
+                xhr.send()
 
-                # console.log('Xpath on remote doc return', xpathResult)
-                d.resolve( xpathResult )
-              else
-                d.resolve new Error()
-            
-            xhr.ontimeout = (e)->
-              d.resolve new Error()
-            
-            xhr.onerror = (e)->
-              d.resolve new Error()
-            
-            xhr.send()
-
-        d.promise
-      else
-        m = xpath.match( /\{:(.+?):\}/ig )
-        if m
-          parser = @getParser()
-          for fname in m
-            el = /\{:(.+?):\}/.exec(fname)[1]
-            if parser
-              xpath = xpath.replace fname, parser.getAttr( el )
-
-        if @config.doc
-          d = Q.defer()        
-          @createOperation @config.doc
-            .evaluate( value )
-            .then ( doc )=>              
-              res = utils.xpathEval doc, xpath
-              d.resolve res
-          d.promise
-        else
-          if value instanceof HTMLDocument or value instanceof XMLDocument
-            utils.xpathEval value, xpath
+            d.promise
           else
-            utils.xpathEval @getDoc(), xpath
+            if @config.doc
+              d = Q.defer()
+              @createOperation @config.doc
+                .evaluate( value )
+                .then ( doc )=>
+                  res = utils.xpathEval doc, xpath
+                  d.resolve res
+              d.promise
+            else
+              if value instanceof HTMLDocument or value instanceof XMLDocument
+                utils.xpathEval value, xpath
+              else
+                utils.xpathEval @getDoc(), xpath
     else
       null
 
@@ -214,17 +198,7 @@
   #evaluate html template
   operations.html_template = ()->
     html = @config.template
-    toWait = Q(true)
-    for fname in html.match( /\{:(.+?):\}/ig )
-      do ( fname )=>
-        el = /\{:(.+?):\}/.exec(fname)[1]
-        # console.log "HTML template getting field #{fname}, #{el}"
-        toWait = toWait.then ()=>
-          Q( @getValue el ).then (val)=>
-            # console.log 'got el', el, fname, val
-            html = html.replace fname, val || ''
-
-    toWait.then ()-> html
+    @substitudeAttrAndValues html
 
   # operations.jsonpath = (value)->
   #   console.log("JSONPath",value, @config.jsonpath);

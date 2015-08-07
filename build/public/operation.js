@@ -7,7 +7,44 @@ var __hasProp = {}.hasOwnProperty;
     return root.Operation = factory(root.operations, root.Q, root.utils);
   }
 })(this, function(operations, Q, utils) {
-  var Operation;
+  var Operation, substitudeAttrAndValues;
+  substitudeAttrAndValues = function(operation, originalStr) {
+    var attr, el, fname, m, newStr, parser, toWait, _fn, _i, _j, _len, _len1, _ref, _ref1;
+    newStr = originalStr;
+    toWait = Q(true);
+    parser = operation.getParser();
+    m = newStr.match(/\{:(.+?):\}/ig);
+    _ref = m || [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      fname = _ref[_i];
+      el = /\{:(.+?):\}/.exec(fname)[1];
+      if (parser) {
+        attr = parser.getAttr(el);
+        if (attr !== null) {
+          newStr = newStr.replace(fname, attr);
+        }
+      }
+    }
+    m = newStr.match(/\{:(.+?):\}/ig);
+    _ref1 = m || [];
+    _fn = (function(_this) {
+      return function(fname) {
+        el = /\{:(.+?):\}/.exec(fname)[1];
+        return toWait = toWait.then(function() {
+          return Q(operation.getValue(el)).then(function(val) {
+            return newStr = newStr.replace(fname, val || '');
+          });
+        });
+      };
+    })(this);
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      fname = _ref1[_j];
+      _fn(fname);
+    }
+    return toWait.then(function() {
+      return newStr;
+    });
+  };
   Operation = (function() {
     function Operation(config) {
       var val;
@@ -123,6 +160,11 @@ var __hasProp = {}.hasOwnProperty;
           } else {
             return null;
           }
+        };
+      })(this);
+      this.substitudeAttrAndValues = (function(_this) {
+        return function(str) {
+          return substitudeAttrAndValues(_this, str);
         };
       })(this);
       this.getType = function(config) {

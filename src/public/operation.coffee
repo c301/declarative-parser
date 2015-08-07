@@ -4,6 +4,32 @@
   else
     root.Operation = factory root.operations, root.Q, root.utils
 )( @, (operations, Q, utils)->
+
+  substitudeAttrAndValues = (operation, originalStr)->
+    newStr = originalStr
+    toWait = Q(true)
+    parser = operation.getParser()
+    m = newStr.match( /\{:(.+?):\}/ig )
+
+    for fname in m || []
+      el = /\{:(.+?):\}/.exec(fname)[1]
+      if parser
+        attr = parser.getAttr el
+        if attr != null
+          newStr = newStr.replace fname, attr
+
+    m = newStr.match( /\{:(.+?):\}/ig )
+    for fname in m || []
+      do ( fname )=>
+        el = /\{:(.+?):\}/.exec(fname)[1]
+        # console.log "newStr template getting field #{fname}, #{el}"
+        toWait = toWait.then ()=>
+          Q( operation.getValue el ).then (val)=>
+            # console.log 'got el', el, fname, val
+            newStr = newStr.replace fname, val || ''
+
+    toWait.then ()-> newStr
+
   class Operation
     constructor: ( config )->
       @parser = null
@@ -100,6 +126,8 @@
         else
           null
 
+      @substitudeAttrAndValues = (str)=>
+        substitudeAttrAndValues @, str
 
       @getType = (config)->
         type = ''
@@ -207,6 +235,7 @@
     result
 
   Operation::operations = operations
+
   Operation::decorators = {
     post_processing: (value)->
       @decorators.postProcessing.bind(this)(value)

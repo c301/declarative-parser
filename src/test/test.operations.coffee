@@ -24,6 +24,25 @@ describe "Specific Operations", () ->
       expect res
       .to.have.a.property "clear_price", "301"
 
+  it "Xpath", ()->
+    config = [
+      { name : "class_name", operations: [
+        { type: "manual", value: "price" }
+      ] }
+      ,
+      {
+        "name": "xpathing",
+        "operations": [
+          { "type": "xpath", "xpath": "string(.//*[@class='{:class_name:}'][{:index:}])"}
+        ]
+      }
+    ]
+    parser = new Parser()
+    parser.setAttr "index", 1
+    parser.parse( config ).then (res)->
+      expect res
+      .to.have.a.property "xpathing", "$ 301"
+
   it "Regex", ()->
     new Parser().parse([
       { name : "price", value: "abdADasdlfk" },
@@ -193,3 +212,22 @@ describe "Specific Operations", () ->
     op1.evaluate().then ( res )->
       expect res
       .to.equal "val1, val2, val3"
+
+  it "html_template", ()->
+    config = [
+      { name : "price", operations: [
+        { type: "xpath", xpath: "string(.//*[@class='price'])" }
+      ] }
+      ,
+      {
+        "name": "templating",
+        "operations": [
+          { "type": "html_template", "template": "check index {:index:} and price {:price:}"}
+        ]
+      }
+    ]
+    parser = new Parser()
+    parser.setAttr "index", "3"
+    parser.parse( config ).then (res)->
+      expect res
+      .to.have.a.property "templating", "check index 3 and price $ 301"
