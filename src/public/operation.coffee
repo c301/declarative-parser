@@ -21,9 +21,9 @@
     m = newStr.match( /\{:(.+?):\}/ig )
     for fname in m || []
       do ( fname )=>
-        el = /\{:(.+?):\}/.exec(fname)[1]
-        # console.log "newStr template getting field #{fname}, #{el}"
         toWait = toWait.then ()=>
+          el = /\{:(.+?):\}/.exec(fname)[1]
+          # console.log "newStr template getting field #{fname}, #{el}"
           Q( operation.getValue el ).then (val)=>
             # console.log 'got el', el, fname, val
             newStr = newStr.replace fname, val || ''
@@ -89,7 +89,7 @@
                 if error.type = "StopParsingError"
                   d.reject error
                 else
-                  val = @.getField()
+                  val = @.getField() 
                   val = if val then val.name else "undefined"
                   console.log "Error in #{val}: #{@.type}", error.stack
                   cb value

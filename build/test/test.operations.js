@@ -266,7 +266,7 @@ describe("Specific Operations", function() {
       return expect(res).to.equal("val1, val2, val3");
     });
   });
-  return it("html_template", function() {
+  it("html_template", function() {
     var config, parser;
     config = [
       {
@@ -291,6 +291,33 @@ describe("Specific Operations", function() {
     parser.setAttr("index", "3");
     return parser.parse(config).then(function(res) {
       return expect(res).to.have.a.property("templating", "check index 3 and price $ 301");
+    });
+  });
+  return it("html_template all", function() {
+    var config, parser;
+    config = [
+      {
+        name: "price1",
+        "value": "1"
+      }, {
+        name: "price2",
+        "value": "2"
+      }, {
+        name: "price3",
+        "value": "3"
+      }, {
+        "name": "templating",
+        "operations": [
+          {
+            "type": "html_template",
+            "template": "{:price1:}{:price2:}{:price3:}"
+          }
+        ]
+      }
+    ];
+    parser = new Parser();
+    return parser.parse(config).then(function(res) {
+      return expect(res).to.have.a.property("templating", "123");
     });
   });
 });
