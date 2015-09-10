@@ -353,7 +353,7 @@ describe("Parser", function() {
       return done();
     });
   });
-  return it("Break parsing on implicit parsing (default parsing config)", function(done) {
+  it("Break parsing on implicit parsing (default parsing config)", function(done) {
     var config, defaultConfig, parser;
     config = [
       {
@@ -392,6 +392,66 @@ describe("Parser", function() {
       defaultConfig: defaultConfig,
       prompt: function() {
         console.log('prompt');
+        return null;
+      }
+    });
+    return parser.parse(config, defaultConfig).then(function(val) {
+      return console.log("done", val);
+    }, function(error) {
+      console.log(error.message);
+      return done();
+    });
+  });
+  return it("Break parsing on implicit parsing (default parsing config and template)", function(done) {
+    var config, defaultConfig, parser;
+    config = [
+      {
+        "name": "address",
+        "required": true,
+        "operations": [
+          {
+            "template": "hello {:location:}"
+          }
+        ]
+      }, {
+        "name": "addr_string",
+        "operations": [
+          {
+            "type": "concatenation",
+            "glue": ", ",
+            "parts": [
+              {
+                "valName": "postal_code"
+              }
+            ]
+          }
+        ]
+      }, {
+        "name": "postal_code",
+        "required": true,
+        "operations": [
+          {
+            "type": "manual",
+            "value": false
+          }
+        ]
+      }
+    ];
+    defaultConfig = [
+      {
+        "name": "location",
+        "operations": [
+          {
+            "template": "{:addr_string:}"
+          }
+        ]
+      }
+    ];
+    parser = new Parser({
+      debug: false,
+      defaultConfig: defaultConfig,
+      prompt: function() {
+        console.log('prompt', arguments);
         return null;
       }
     });

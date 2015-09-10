@@ -14,16 +14,15 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     if (this.config && typeof this.config.value !== "undefined") {
       return this.config.value;
     } else {
-      return null;
+      return Operation.EMPTY_VALUE;
     }
   };
   operations.regex = function(value) {
-    var applyRegex, result, toReturn;
-    result = null;
+    var applyRegex, toReturn;
     applyRegex = (function(_this) {
       return function(value) {
         var modifier, nextRes, reg, res, toReturn;
-        toReturn = null;
+        toReturn = Operation.EMPTY_VALUE;
         if (value) {
           modifier = "";
           if (typeof _this.config.modifier !== 'undefined') {
@@ -47,19 +46,19 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
               if (res) {
                 toReturn = res;
               } else {
-                toReturn = null;
+                toReturn = Operation.EMPTY_VALUE;
               }
             } else {
               if (res) {
                 toReturn = res[1];
               } else {
-                toReturn = null;
+                toReturn = Operation.EMPTY_VALUE;
               }
             }
           }
           return toReturn;
         } else {
-          return null;
+          return Operation.EMPTY_VALUE;
         }
       };
     })(this);
@@ -76,6 +75,7 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
       return this.substitudeAttrAndValues(xpath).then((function(_this) {
         return function(xpath) {
           var d;
+          console.log('=== xpath', xpath);
           if (_this.config.document_url) {
             d = Q.defer();
             _this.createOperation(_this.config.document_url).evaluate().then(function(result) {
@@ -122,7 +122,7 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
         };
       })(this));
     } else {
-      return null;
+      return Operation.EMPTY_VALUE;
     }
   };
   operations.wait = function(value) {
@@ -140,9 +140,9 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
       var res;
       res = el[attr];
       if (!res && (el instanceof HTMLElement || el.getAttribute)) {
-        return res = el.getAttribute(attr || null);
+        return res = el.getAttribute(attr || Operation.EMPTY_VALUE);
       } else {
-        return res || null;
+        return res || Operation.EMPTY_VALUE;
       }
     };
     if (value) {
@@ -164,7 +164,7 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
         } catch (_error) {
           e = _error;
           console.log(e);
-          return d.resolve(null);
+          return d.resolve(Operation.EMPTY_VALUE);
         }
       });
     } else {
@@ -250,7 +250,7 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
   };
   operations.equal = function(value) {
     var res;
-    res = null;
+    res = Operation.EMPTY_VALUE;
     if (this.config.is_regex) {
       res = new RegExp(this.config.value, "i").test(value);
     } else {
@@ -271,38 +271,35 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     })(this));
   };
   operations.concatenation = function() {
-    var d, glue, part, parts, toWait, _fn, _i, _len;
+    var glue, part, parts, results, toWait, _fn, _i, _len;
     parts = this.config.parts;
     glue = this.config.glue || "";
-    toWait = [];
-    d = Q.defer();
+    results = [];
+    toWait = Q(true);
     _fn = (function(_this) {
       return function(part) {
-        return toWait.push(_this.createOperation(part).evaluate().then(function(res) {
-          return res;
-        }));
+        return toWait = toWait.then(function(res) {
+          return _this.createOperation(part).evaluate().then(function(res) {
+            return results.push(res);
+          });
+        });
       };
     })(this);
     for (_i = 0, _len = parts.length; _i < _len; _i++) {
       part = parts[_i];
       _fn(part);
     }
-    Q.allSettled(toWait).then((function(_this) {
-      return function(res) {
+    return toWait.then((function(_this) {
+      return function() {
         var result;
-        result = res.map(function(v) {
-          return v.value;
-        });
-        result = result.filter(function(val) {
+        result = results.filter(function(val) {
           if (val) {
             return val;
           }
         });
-        result = result.join(glue);
-        return d.resolve(result);
+        return result = result.join(glue);
       };
     })(this));
-    return d.promise;
   };
   operations.collection = function() {
     var d, part, parts, toWait, _fn, _i, _len;

@@ -375,3 +375,65 @@ describe "Parser", ()->
           console.log error.message
           done()
       )
+
+  it "Break parsing on implicit parsing (default parsing config and template)", ( done )->
+    config = [
+      {
+        "name":"address",
+        "required": true,
+        "operations": [
+          {
+            "template": "hello {:location:}"
+          }
+        ]
+      },
+      {
+          "name": "addr_string",
+          "operations": [
+              {
+                  "type": "concatenation",
+                  "glue": ", ",
+                  "parts": [
+                      { "valName": "postal_code" }
+                  ]
+              }
+          ]
+      },
+      {
+        "name":"postal_code",
+        "required": true,
+        "operations": [
+          {
+            "type": "manual",
+            "value": false
+          }
+        ]
+      }
+    ]
+    defaultConfig = [
+      {
+        "name":"location",
+        "operations": [
+          {
+            "template": "{:addr_string:}"
+          }
+        ]
+      }
+    ]
+    parser = new Parser({
+      debug: false,
+      defaultConfig: defaultConfig
+      #use custom prompt
+      prompt: ()->
+        console.log 'prompt', arguments
+        null
+    })
+    parser.parse config, defaultConfig
+      .then(
+        (val)->
+          console.log "done", val
+        ,
+        (error)->
+          console.log error.message
+          done()
+      )

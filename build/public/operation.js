@@ -20,7 +20,7 @@ var __hasProp = {}.hasOwnProperty;
       el = /\{:(.+?):\}/.exec(fname)[1];
       if (parser) {
         attr = parser.getAttr(el);
-        if (attr !== null) {
+        if (attr !== Operation.EMPTY_VALUE) {
           newStr = newStr.replace(fname, attr);
         }
       }
@@ -59,7 +59,7 @@ var __hasProp = {}.hasOwnProperty;
         return new Operation(config).setParser(this.getParser()).setField(this.getField());
       };
       this._evaluate = function(res) {
-        return res || null;
+        return res || Operation.EMPTY_VALUE;
       };
       this.evaluate = function(value, cb) {
         var d;
@@ -70,14 +70,14 @@ var __hasProp = {}.hasOwnProperty;
         }
         if (typeof value === 'function' && arguments.length === 1) {
           cb = value;
-          value = null;
+          value = Operation.EMPTY_VALUE;
         }
         if (this.config.final && value) {
           cb(value);
           d.resolve(value);
         } else {
           if (!this._evaluate) {
-            null;
+            Operation.EMPTY_VALUE;
           } else {
             Q.fcall((function(_this) {
               return function() {
@@ -158,7 +158,7 @@ var __hasProp = {}.hasOwnProperty;
             value = parser.value(valName, _this, cb);
             return value;
           } else {
-            return null;
+            return Operation.EMPTY_VALUE;
           }
         };
       })(this);
@@ -210,7 +210,7 @@ var __hasProp = {}.hasOwnProperty;
       if (this.config === void 0) {
         this.config = {
           type: "manual",
-          value: null
+          value: Operation.EMPTY_VALUE
         };
       }
       if (this.config instanceof Array && this.config.length) {
@@ -243,6 +243,7 @@ var __hasProp = {}.hasOwnProperty;
     return Operation;
 
   })();
+  Operation.EMPTY_VALUE = '';
   Operation.prototype.decorate = function(value) {
     var decoratorName, defer, found, func, toReturn, toWait, _ref;
     defer = Q.defer();

@@ -219,7 +219,7 @@ describe("Operations testing", function() {
       var op;
       op = new Operation({});
       return op.evaluate().then(function(value) {
-        return expect(value).to.be["null"];
+        return expect(value).to.be.equal(Operation.EMPTY_VALUE);
       });
     });
   });

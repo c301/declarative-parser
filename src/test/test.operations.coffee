@@ -1,10 +1,10 @@
 "use strict"
 
 describe "Specific Operations", () ->
-  it.skip "Wait 1 second", ()->
+  it "Wait 1 second", ()->
     @timeout 3000
 
-    d = new Operation({ type: "wait", delay: "1000" }).evaluate()
+    d = new Operation({ type: "wait", delay: "1000", default: "1 seconds passed" }).evaluate()
 
     d.then ( text )->
       expect text
@@ -26,9 +26,12 @@ describe "Specific Operations", () ->
 
   it "Xpath", ()->
     config = [
-      { name : "class_name", operations: [
-        { type: "manual", value: "price" }
-      ] }
+      {
+        name : "class_name",
+        operations: [
+          { type: "manual", value: "price" }
+        ]
+      }
       ,
       {
         "name": "xpathing",
@@ -93,7 +96,7 @@ describe "Specific Operations", () ->
       expect res.clear_price[1]
       .to.be.equal '31'
       expect res.clear_price[2]
-      .to.be.equal null
+      .to.be.equal Operation.EMPTY_VALUE
       expect res.clear_price[3]
       .to.be.equal '2'
 

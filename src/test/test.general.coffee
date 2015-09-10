@@ -665,7 +665,7 @@ describe "General parsing", ()->
     parser = new Parser()
     parser.parse( config ).then (res)->
       expect res
-      .to.have.a.property "price", null
+      .to.have.a.property "price", Operation.EMPTY_VALUE
 
   it "Parse", ()->
     config = [

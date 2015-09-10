@@ -137,7 +137,7 @@ describe "Operations testing", ()->
       op = new Operation({})
       op.evaluate().then (value)->
         expect value
-        .to.be.null
+        .to.be.equal Operation.EMPTY_VALUE 
 
 
   describe "Operations Queue", ()->

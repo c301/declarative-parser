@@ -15,7 +15,7 @@
       el = /\{:(.+?):\}/.exec(fname)[1]
       if parser
         attr = parser.getAttr el
-        if attr != null
+        if attr != Operation.EMPTY_VALUE
           newStr = newStr.replace fname, attr
 
     m = newStr.match( /\{:(.+?):\}/ig )
@@ -46,7 +46,7 @@
 
       #default evaluate
       @_evaluate = ( res )->
-        res || null
+        res || Operation.EMPTY_VALUE
 
       @evaluate = ( value, cb )->
         d = Q.defer()
@@ -58,13 +58,13 @@
 
         if typeof value == 'function' && arguments.length == 1
           cb = value
-          value = null
+          value = Operation.EMPTY_VALUE
 
         if @config.final && value
           cb value
           d.resolve value
         else
-          if !@_evaluate then null else
+          if !@_evaluate then Operation.EMPTY_VALUE else
             Q.fcall( ()=>
               @_evaluate value
             )
@@ -124,7 +124,7 @@
           value = parser.value( valName, @, cb )
           value
         else
-          null
+          Operation.EMPTY_VALUE
 
       @substitudeAttrAndValues = (str)=>
         substitudeAttrAndValues @, str
@@ -158,11 +158,11 @@
         config.type = type
         type
 
-      #if undefined( operations was ommited ), return null
+      #if undefined( operations was ommited ), return Operation.EMPTY_VALUE
       if @config == undefined
         @config =
           type: "manual"
-          value: null
+          value: Operation.EMPTY_VALUE
       #if array of operations
       if @config instanceof Array && @config.length
         @type = "operationQueue"
@@ -183,6 +183,9 @@
             console.log "Unknown operation type #{val}:#{@type}", @config
         else
           @_evaluate = @operations[ @type ]
+
+  #this value should be returned, on soft fail
+  Operation.EMPTY_VALUE = ''
 
   #apply suffix, prefix, etc..
   Operation::decorate = ( value )->

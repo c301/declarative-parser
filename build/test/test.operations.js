@@ -1,11 +1,12 @@
 "use strict";
 describe("Specific Operations", function() {
-  it.skip("Wait 1 second", function() {
+  it("Wait 1 second", function() {
     var d;
     this.timeout(3000);
     d = new Operation({
       type: "wait",
-      delay: "1000"
+      delay: "1000",
+      "default": "1 seconds passed"
     }).evaluate();
     return d.then(function(text) {
       return expect(text).to.equal("1 seconds passed");
@@ -132,7 +133,7 @@ describe("Specific Operations", function() {
       console.log(res);
       expect(res.clear_price[0]).to.be.equal('1234');
       expect(res.clear_price[1]).to.be.equal('31');
-      expect(res.clear_price[2]).to.be.equal(null);
+      expect(res.clear_price[2]).to.be.equal(Operation.EMPTY_VALUE);
       return expect(res.clear_price[3]).to.be.equal('2');
     });
   });

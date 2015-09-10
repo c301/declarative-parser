@@ -25,11 +25,11 @@ var __hasProp = {}.hasOwnProperty,
           }
         } else if (this.preBuildResults[valName]) {
           if (cb && typeof cb === 'function') {
-            return Q(this.preBuildResults[valName] || null).then(function(val) {
+            return Q(this.preBuildResults[valName] || Operation.EMPTY_VALUE).then(function(val) {
               return cb(val);
             });
           } else {
-            return this.preBuildResults[valName] || null;
+            return this.preBuildResults[valName] || Operation.EMPTY_VALUE;
           }
         } else if (this.parsingConfig[valName]) {
           field = this.parsingConfig[valName];
@@ -60,7 +60,7 @@ var __hasProp = {}.hasOwnProperty,
           return res;
         } else {
           if (cb && typeof cb === 'function') {
-            return cb(null);
+            return cb(Operation.EMPTY_VALUE);
           }
         }
       };
@@ -69,7 +69,7 @@ var __hasProp = {}.hasOwnProperty,
       };
       this.getAttr = function(attrName) {
         if (this[attrName] === void 0 || this[attrName] === null || this[attrName] === false) {
-          return null;
+          return Operation.EMPTY_VALUE;
         } else {
           return this[attrName];
         }
@@ -203,7 +203,13 @@ var __hasProp = {}.hasOwnProperty,
                 }
                 return handleDeferred.resolve();
               }, function(error) {
-                return handleDeferred.resolve();
+                if (error instanceof StopParsingError) {
+                  console.log(error.message);
+                  return handleDeferred.reject(error);
+                } else {
+                  console.log("Error resolveValue", error.stack);
+                  return handleDeferred.resolve();
+                }
               });
             } else {
               _this.log("= Parser: calculated " + value.name + ". Result:", res);

@@ -25,10 +25,10 @@
           # return value from pre built results, eg results of prev parsing
           # console.log "parser.value return prebuilresult", @preBuildResults[valName]
           if cb && typeof cb == 'function'
-            Q( @preBuildResults[valName] || null ).then ( val )->
+            Q( @preBuildResults[valName] || Operation.EMPTY_VALUE ).then ( val )->
               cb( val )
           else
-            @preBuildResults[valName] || null
+            @preBuildResults[valName] || Operation.EMPTY_VALUE
         else if @parsingConfig[valName]
           # calculate value with config
           # console.log "Parser.value found", @parsingConfig[valName]
@@ -54,9 +54,9 @@
           res
         else
           if cb && typeof cb == 'function'
-            cb null
+            cb Operation.EMPTY_VALUE
 
-#        val = null
+#        val = Operation.EMPTY_VALUE
 #        if !@result[ valName ]
 #          search()
 #        else
@@ -69,7 +69,7 @@
 
       @getAttr = (attrName)->
         if @[attrName] == undefined || @[attrName] == null || @[attrName] == false
-          null
+          Operation.EMPTY_VALUE
         else
           @[attrName]
 
@@ -183,7 +183,12 @@
                   ,
                   (error)=>
                     # console.log "Error resolveValue in default config", error.stack
-                    handleDeferred.resolve()
+                    if error instanceof StopParsingError
+                      console.log error.message
+                      handleDeferred.reject(error)
+                    else
+                      console.log "Error resolveValue", error.stack
+                      handleDeferred.resolve()
                 )
               else
                 @log "= Parser: calculated #{value.name}. Result:", res

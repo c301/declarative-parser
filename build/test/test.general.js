@@ -619,7 +619,7 @@ describe("General parsing", function() {
     ];
     parser = new Parser();
     return parser.parse(config).then(function(res) {
-      return expect(res).to.have.a.property("price", null);
+      return expect(res).to.have.a.property("price", Operation.EMPTY_VALUE);
     });
   });
   it("Parse", function() {

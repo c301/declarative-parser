@@ -8,13 +8,12 @@
 
   #config can be accessed via this.config
   operations.manual= ()->
-    if @config and typeof @config.value != "undefined" then @config.value else null
+    if @config and typeof @config.value != "undefined" then @config.value else Operation.EMPTY_VALUE
 
   #we can pass existing value (from previos operation) as argument
   operations.regex= ( value )->
-    result = null
     applyRegex = ( value )=>
-      toReturn = null
+      toReturn = Operation.EMPTY_VALUE
       if value
           modifier = ""
           if typeof @config.modifier != 'undefined'
@@ -31,12 +30,12 @@
           else
               res = reg.exec( value )
               if @config.full 
-                  if res then toReturn = res else toReturn = null
+                  if res then toReturn = res else toReturn = Operation.EMPTY_VALUE
               else
-                  if res then toReturn = res[1] else toReturn = null
+                  if res then toReturn = res[1] else toReturn = Operation.EMPTY_VALUE
           toReturn
       else
-        null
+        Operation.EMPTY_VALUE
     if Array.isArray value 
       toReturn = value.map applyRegex
     else
@@ -49,6 +48,7 @@
     if xpath
       @substitudeAttrAndValues xpath
         .then (xpath)=>
+          console.log '=== xpath', xpath
           if @config.document_url
             # console.log("Xpath: document_url detected")
             d = Q.defer()
@@ -91,7 +91,7 @@
               else
                 utils.xpathEval @getDoc(), xpath
     else
-      null
+      Operation.EMPTY_VALUE
 
   operations.wait= ( value )->
     d = Q.defer()
@@ -108,9 +108,9 @@
     getAttr = (el, attr)->
       res = el[attr]
       if !res && (el instanceof HTMLElement || el.getAttribute)
-        res = el.getAttribute attr || null
+        res = el.getAttribute attr || Operation.EMPTY_VALUE
       else
-        res || null
+        res || Operation.EMPTY_VALUE
 
     if value
       res = []
@@ -126,7 +126,7 @@
                 d.resolve res
             catch e
                 console.log e
-                d.resolve null
+                d.resolve Operation.EMPTY_VALUE
     else d.resolve value
 
     d.promise
@@ -235,7 +235,7 @@
   #returns result of the comparison
   operations.equal = ( value )->
 #    console.log "equal", value, @config.value, @config.is_regex
-    res = null
+    res = Operation.EMPTY_VALUE
     if @config.is_regex
       res = new RegExp @config.value, "i"
       .test value
@@ -250,35 +250,28 @@
       if typeof value == 'undefined'
         console.log("Warning: #{valueName} not found")
       value
+      
 
   operations.concatenation = ()->
     parts = @config.parts
     glue = @config.glue || ""
+    results = []
 
-    toWait = []
-
-    d = Q.defer()
+    toWait = Q(true)
     for part in parts
       do ( part ) =>
-        toWait.push(
+        toWait = toWait.then (res)=>
           @createOperation part
           .evaluate().then (res)->
-            res
-        )
-    Q.allSettled toWait
-    .then ( res )=>
-      result = res.map (v)->
-        v.value
+            results.push res
 
-      result = result.filter (val)->
+
+    toWait.then ()=>
+      result = results.filter (val)->
         if val
           val
 
       result = result.join glue
-
-      d.resolve result
-
-    d.promise
 
   operations.collection = ()->
     parts = @config.parts
