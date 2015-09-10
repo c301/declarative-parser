@@ -1,65 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-us">
   <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="viewport" content="width=640">
-
-    <link rel="stylesheet" href="stylesheets/core.css" media="screen">
-    <link rel="stylesheet" href="stylesheets/mobile.css" media="handheld, only screen and (max-device-width:640px)">
-    <link rel="stylesheet" href="stylesheets/github-light.css">
-
+    <meta charset="UTF-8">
+    <title>Declarative-parser by c301</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
     <script type="text/javascript" src="javascripts/modernizr.js"></script>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.rawgit.com/c301/declarative-parser/master/build/public/vendor/q.js"></script>
     <script type="text/javascript" src="https://cdn.rawgit.com/c301/declarative-parser/master/build/dist/dparser.min.js"></script>
-    <script type="text/javascript" src="javascripts/headsmart.min.js"></script>
-    <script type="text/javascript">
-      $(document).ready(function () {
-        $('#main_content').headsmart()
-      })
-    </script>
-    <title>Declarative-parser by c301</title>
+
+    <style>
+textarea{
+  width:100%;
+}
+.btn-common{
+  color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(8, 61, 79, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-common:hover {
+  background-color: rgba(13, 84, 107, 0.8);
+  text-decoration: none;
+  border-color: rgba(255, 255, 255, 0.3); 
+}
+    </style>
   </head>
-
   <body>
-    <a id="forkme_banner" href="https://github.com/c301/declarative-parser">View on GitHub</a>
-    <div class="shell">
+    <section class="page-header">
+      <h1 class="project-name">Declarative-parser</h1>
+      <h2 class="project-tagline">HTML parser configured via JSON</h2>
+      <a href="https://github.com/c301/declarative-parser" class="btn">View on GitHub</a>
+      <a href="https://github.com/c301/declarative-parser/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/c301/declarative-parser/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
 
-      <header>
-        <span class="ribbon-outer">
-          <span class="ribbon-inner">
-            <h1>Declarative-parser</h1>
-            <h2>HTML parser configured via JSON</h2>
-          </span>
-          <span class="left-tail"></span>
-          <span class="right-tail"></span>
-        </span>
-      </header>
+    <section class="main-content">
 
-      <section id="downloads">
-        <span class="inner">
-          <a href="https://github.com/c301/declarative-parser/zipball/master" class="zip"><em>download</em> .ZIP</a><a href="https://github.com/c301/declarative-parser/tarball/master" class="tgz"><em>download</em> .TGZ</a>
-        </span>
-      </section>
+  <h2>
+  <a id="general-attributes-of-the-operations" class="anchor" href="#general-attributes-of-the-operations" aria-hidden="true">
+    <span class="octicon octicon-link"></span></a>Rule ( should be valid JSON )
+  &nbsp;
+  &nbsp;
+  &nbsp;
+  <span>
+    <input id="singleOperation" type="checkbox">&nbsp;
+    <label for="singleOperation">single operation</label>
+    </h2>
+  </span>
+  </h2>
 
+  <textarea id="parserInput" name="" cols="30" rows="10">
+[{ 
+    "name": "price",
+    "default": "20",
+    "operations":[{
+        "type": "xpath",
+        "xpath": "string(.//*[@id='price'])"
+    }]
+}]
+  </textarea>
 
-      <span class="banner-fix"></span>
+  <h2>
+  <a id="general-attributes-of-the-operations" class="anchor" href="#general-attributes-of-the-operations" aria-hidden="true">
+    <span class="octicon octicon-link"></span></a>HTML
+  </h2>
 
+  <textarea id="parserDoc" name="" cols="30" rows="10">
+<span id="price">100</span>
+  </textarea>
 
-      <section id="main_content">
+  <h2>
+  <a id="general-attributes-of-the-operations" class="anchor" href="#general-attributes-of-the-operations" aria-hidden="true">
+    <span class="octicon octicon-link"></span></a>Result
+  </h2>
 
-<h1>
-<a id="parser-initialization" class="anchor" href="#parser-initialization" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parser Initialization</h1>
+  <textarea id="parserOutput" name="" cols="30" rows="10">
+  </textarea>
 
-<span class="label">rule</span>
-<input type="checkbox">single operation
+  <a id="parserEvaluate" href="" class="btn btn-common">Evaluate</a>
 
-<textarea id="" name="" cols="30" rows="10"></textarea>
-<span class="label">html</span>
-<textarea id="" name="" cols="30" rows="10"></textarea>
-<span class="label">result</span>
-<textarea id="" name="" cols="30" rows="10"></textarea>
-<button type="button"></button>
-    
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/c301/declarative-parser">Declarative-parser</a> is maintained by <a href="https://github.com/c301">c301</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+    <script type="text/javascript" src="javascripts/main.js"></script>
   </body>
 </html>
+
