@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=640">
+
+    <link rel="stylesheet" href="stylesheets/core.css" media="screen">
+    <link rel="stylesheet" href="stylesheets/mobile.css" media="handheld, only screen and (max-device-width:640px)">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+
+    <script type="text/javascript" src="javascripts/modernizr.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="javascripts/headsmart.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function () {
+        $('#main_content').headsmart()
+      })
+    </script>
+    <title>Declarative-parser by c301</title>
+  </head>
+
+  <body>
+    <a id="forkme_banner" href="https://github.com/c301/declarative-parser">View on GitHub</a>
+    <div class="shell">
+
+      <header>
+        <span class="ribbon-outer">
+          <span class="ribbon-inner">
+            <h1>Declarative-parser</h1>
+            <h2>HTML parser configured via JSON</h2>
+          </span>
+          <span class="left-tail"></span>
+          <span class="right-tail"></span>
+        </span>
+      </header>
+
+      <section id="downloads">
+        <span class="inner">
+          <a href="https://github.com/c301/declarative-parser/zipball/master" class="zip"><em>download</em> .ZIP</a><a href="https://github.com/c301/declarative-parser/tarball/master" class="tgz"><em>download</em> .TGZ</a>
+        </span>
+      </section>
+
+
+      <span class="banner-fix"></span>
+
+
+      <section id="main_content">
+        <p>Should be mentioned later:
+preBuildResults
+defaultConfig
+defaultvalue
+addFieldDecorator</p>
+
+<h1>
+<a id="parser-initialization" class="anchor" href="#parser-initialization" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parser Initialization</h1>
+
+<p>Common workflow</p>
+
+<pre><code>new Parser().parse( config, function( result ){
+    console.log( result )
+} )
+</code></pre>
+
+<p>Pass custom document object</p>
+
+<pre><code>new Parser( HTMLDoc ).parse( config,  function( result ){
+    console.log( result )
+} )
+</code></pre>
+
+<p>Pass html string</p>
+
+<pre><code>new Parser( '&lt;div class="item"&gt;21&lt;/div&gt;' ).parse( config, function( result ){
+    console.log( result )
+} )
+</code></pre>
+
+<p>Pass config</p>
+
+<pre><code>var parserConfig = {
+    document: document,
+
+    //hooks. All hooks should return something to rewrite default behavior
+    beforeParse: function( parseConfig ){  },
+    afterParse: function( parseResult ){  },
+    beforeParseValue: function( valueConfig ){  },
+    afterParseValue: function( valueConfig, result ){  },
+    onGetValue: function( valueName ){  },
+
+    operations: {},
+    decorators: {}
+}
+new Parser( parserConfig ).parse( config ).then( function( result ){
+    console.log( result )
+} )
+</code></pre>
+
+<h1>
+<a id="parser-config" class="anchor" href="#parser-config" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parser Config</h1>
+
+<ul>
+<li>"debug" - if positive, output debug information to console</li>
+<li>"prompt" - JS function to ask for user input ( native <code>window.prompt</code> used by default). Return <code>null</code> to break parsing</li>
+</ul>
+
+<h2>
+<a id="general-attributes-of-the-operations" class="anchor" href="#general-attributes-of-the-operations" aria-hidden="true"><span class="octicon octicon-link"></span></a>General attributes of the operations:</h2>
+
+<ul>
+<li>"final" - defines whether or not the operation. If previos result not empty, operation do not executes</li>
+<li>"glue" - to make result.join( glue ) if result is array. Ignored if result is string</li>
+<li>"preffix" - add preffix string to result, only if typeof result is string</li>
+<li>"suffix" - add suffix string to result, only if typeof result is string</li>
+<li>"num_in_array" - index in array that should return( if exist ). "glue" has more priority than "num_in_array"</li>
+<li>"debug" - print result in console if debug is on</li>
+<li>"normalize_space" - normalize space</li>
+<li>"persist" - use cache or not ( "persist" : true )</li>
+<li>"required" - if not defined user have to manually set value for this</li>
+<li>"label" - label for value ( using in prompt for 'required' )</li>
+<li>"prompt_text" - text for prompt ( using in prompt for 'required' )</li>
+<li>"site_specific_config" - operations for specifis site <code>{"craigslist": [{ "type": "manual",  "value": "Y" }],"kijiji": [{ "type": "manual",  "value": "1" }]}</code>
+</li>
+</ul>
+
+<h2>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h2>
+
+<ul>
+<li>operation with few general attributes. 
+
+<ul>
+<li>First operation: try to find array of elements with xpath, then join it with glue. Add suffix and preffix.</li>
+<li>Second operation in queue will not executes if first operation was successed ( "final" : true ).</li>
+</ul>
+</li>
+</ul>
+
+<pre><code>{   "name" : "phone",
+    "operations" : [
+        { 
+            "xpath" : ".//div[@class='content']/div[@id='contact_info']/p",
+            "prefix" : "Contact phone ",
+            "suffix" : " please call on monday."
+            "glue" : "-",
+        },
+        { 
+            "xpath" : ".//div[@class='content']/div[@id='contact']/div",
+            "num_in_array" : 2,
+            "final" : true
+        }
+    ]
+}
+</code></pre>
+
+<h1>
+<a id="types-of-the-operations" class="anchor" href="#types-of-the-operations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Types of the operations</h1>
+
+<ul>
+<li>"manual" - manual set value of field. Short form: <code>{ "name": "building_sqft", "value" : "" }</code> or inside queue <code>{  "type": "manual",  "value": "1"    }</code> or short form inside queue <code>["Y"]</code> ( just string )</li>
+<li>"regex" - return 1st, not 0, element of the matches, so regex should contains "()". Normal form: <code>{ "type": "regex", "regex": "^(\d{3})" }</code> or short form <code>{ "regex": "\d(.+?)\d" }</code>, "pipe" - return source string instead of empty string if regex is failed, "full": return full array of RegExp.exec() results, we can use <code>num_in_array</code> to get specific result: <code>{ "regex": "\\d(.+?)(\\d+)", "num_in_array": 2 }</code>, "match": use <code>string.match(regexp)</code> instead of <code>regexp.exec(string)</code>. By default used 'i' modifier (case insensitive), to change this, we can use <code>"modifier": ""</code> option</li>
+<li>"parsed_val" - use another value as result. Normal form: <code>{ "type": "parsed_val",  "name": "address" }</code> or short form <code>{ "valName": "address" }</code>. All <code>\</code> should be escaped.</li>
+<li>"xpath" - make a xpath search. Normal form: <code>{ "type": "xpath",  "xpath": ".//div[1]" }</code> or short form <code>{ "xpath": ".//div[1]" }</code>. Statement <code>{:index:}</code> will be replaced by corresponding index of syndication button. Exapmple: user press button#2 ( with index 2 ), <code>xpath: ".//div[{:index:}]/span"</code> will become <code>".//div[2]/span"</code>. "document_url" - sets contentDocument from remote url. "doc" - set contentDocument for xpath</li>
+<li>"current_document" - return current contentDocument. Normal form: <code>{ "type": "current_document" }</code>
+</li>
+<li>"get_attribute" - get attribute of value. Normal form: <code>{ "type": "get_attribute",  "attribute": "href" }</code> or short form <code>{ "attribute": "location" }</code>
+</li>
+<li>"html_template" - prepare html template. Normal form: <code>{ "type": "html_template",  "teplate": "&lt;div&gt;{:price:}&lt;/div&gt;" }</code> or short form <code>{ "template": "&lt;div&gt;{:price:}&lt;/div&gt;" }</code>
+</li>
+<li>"replace" - <code>{ "type": "replace", "suffix": "\n\u200C\n", "is_regex" : true, "arg1": "\\s.?-\\s?", "arg2": "\n"}</code>, if <code>is_regex</code>: use regex with 'global' modificator</li>
+<li>"equal" - return bool result <code>{"type": "equal", "value": "0", "is_regex" : true}</code>
+</li>
+<li>"switchOf" - "value" - value that will be used in "flag"; "flag" - OperarionsQueue its result will interpreted as bool; "positive"/"negative" - OperarionsQueue that should be executed according to "flag" result. <code>{"type": "switchOf", "value": {"valName": "bedeoom_count"}, "flag": {"type": "equal", "value": "true"}, "positive": "Y", "negative": "N"}</code> </li>
+<li>"wait" - wait a delay <code>{ "type": "wait", "delay": 1000, "postProcessing": [{"xpath": ".//div[@id='results']//div[contains(@class,'grid_2 omega end')]"} ] }</code>
+</li>
+<li>"js_eval" - execute js code<code>{ "type": "js_eval", "js": "(function(){ return "{:bedroom_count:} bedrooms" })()" }</code>
+</li>
+<li>"html_to_text" - stripe html string to get good formatter text string</li>
+<li>"html_decode" - decode html entities</li>
+<li>"utf_encode" - encode utf entities like: <code>&amp;#x2730;</code> into symbols, ie <code>✰</code> in given text</li>
+</ul>
+      </section>
+
+      <footer>
+        <span class="ribbon-outer">
+          <span class="ribbon-inner">
+            <p>this project by <a href="https://github.com/c301">c301</a> can be found on <a href="https://github.com/c301/declarative-parser">GitHub</a></p>
+          </span>
+          <span class="left-tail"></span>
+          <span class="right-tail"></span>
+        </span>
+        <p>Generated with <a href="https://pages.github.com">GitHub Pages</a> using Merlot</p>
+        <span class="octocat"></span>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
