@@ -10,6 +10,18 @@ describe "Specific Operations", () ->
       expect text
       .to.equal "1 seconds passed"
 
+  it "Split on empty string", ()->
+    new Parser().parse([
+      { name : "test_split", 
+      operations: [
+        "",
+        { type: "split", separator: "," }
+      ] }
+    ]).then ( res )->
+      console.log res
+      expect res.test_split.length
+      .to.equal 1
+
   it "Parsed val", ()->
     new Parser().parse([
       { name : "price", operations: [

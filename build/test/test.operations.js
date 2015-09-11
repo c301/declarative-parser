@@ -12,6 +12,22 @@ describe("Specific Operations", function() {
       return expect(text).to.equal("1 seconds passed");
     });
   });
+  it("Split on empty string", function() {
+    return new Parser().parse([
+      {
+        name: "test_split",
+        operations: [
+          "", {
+            type: "split",
+            separator: ","
+          }
+        ]
+      }
+    ]).then(function(res) {
+      console.log(res);
+      return expect(res.test_split.length).to.equal(1);
+    });
+  });
   it("Parsed val", function() {
     return new Parser().parse([
       {
