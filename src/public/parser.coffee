@@ -55,6 +55,8 @@
         else
           if cb && typeof cb == 'function'
             cb Operation.EMPTY_VALUE
+          else
+            Operation.EMPTY_VALUE
 
 #        val = Operation.EMPTY_VALUE
 #        if !@result[ valName ]

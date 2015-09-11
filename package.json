@@ -3,14 +3,16 @@
   "version": "0.0.0",
   "dependencies": {},
   "devDependencies": {
+    "chai": "^1.9.1",
+    "connect": "^3.4.0",
+    "event-stream": "^3.1.2",
     "gulp": "~3.6.0",
     "gulp-coffee": "~1.4.1",
-    "gulp-watch": "~0.5.3",
     "gulp-jshint": "~1.5.2",
+    "gulp-watch": "~0.5.3",
     "jshint-stylish": "~0.1.5",
-    "chai": "^1.9.1",
     "requirejs": "^2.1.11",
-    "event-stream": "^3.1.2",
+    "serve-static": "^1.10.0",
     "through2": "^0.4.1"
   }
 }

@@ -402,6 +402,27 @@ describe("Parser", function() {
       return done();
     });
   });
+  it("Unexisting parsed value", function(done) {
+    var config, parser;
+    config = [
+      {
+        "name": "price",
+        "operations": [
+          {
+            "valName": "email"
+          }
+        ]
+      }
+    ];
+    parser = new Parser();
+    return parser.parse(config).then(function(val) {
+      if (val.price === Operation.EMPTY_VALUE) {
+        return done();
+      } else {
+        return done('Should be equal to Operation.EMPTY_VALUE: ' + Operation.EMPTY_VALUE);
+      }
+    });
+  });
   return it("Break parsing on implicit parsing (default parsing config and template)", function(done) {
     var config, defaultConfig, parser;
     config = [

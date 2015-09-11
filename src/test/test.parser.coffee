@@ -376,6 +376,24 @@ describe "Parser", ()->
           done()
       )
 
+  it "Unexisting parsed value", ( done )->
+    config = [{
+      "name":"price",
+      "operations": [
+        {
+          "valName": "email"
+        }
+      ]
+    }]
+    parser = new Parser()
+    parser.parse config
+      .then (val)->
+        if val.price == Operation.EMPTY_VALUE
+          done()
+        else 
+          done 'Should be equal to Operation.EMPTY_VALUE: ' + Operation.EMPTY_VALUE
+      
+
   it "Break parsing on implicit parsing (default parsing config and template)", ( done )->
     config = [
       {
