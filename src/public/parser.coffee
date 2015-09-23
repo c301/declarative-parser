@@ -133,18 +133,22 @@
     #clean this.result before next parse
     @result = {}
     @parsingConfig = {}
+    @configs = []
 
     if arguments.length > 1
       if typeof arguments[ arguments.length - 1 ] == 'function'
         cb = arguments[ arguments.length - 1 ]
-        config = Parser::mergeConfigs( Array.prototype.slice.call( arguments, 0, arguments.length - 1 ) )
+        @configs = Array.prototype.slice.call( arguments, 0, arguments.length - 1 )
       else
-        config = Parser::mergeConfigs( Array.prototype.slice.call( arguments, 0, arguments.length ) )
+        @configs =  Array.prototype.slice.call( arguments, 0, arguments.length )
+
+      config = Parser::mergeConfigs @configs
 
     else if !arguments.length
       d.resolve new Error "Wrong arguments"
     else
       config = arguments[0]
+      @configs = [config]
 
     for value in config
       @parsingConfig[ value.name ] = value
