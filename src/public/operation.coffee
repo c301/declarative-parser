@@ -1,9 +1,29 @@
 ( ( root, factory )->
   if typeof define == "function" && define.amd
-    define ["operations", "q", "utils"], factory
+    define ["operations", "q", "utils", "objectpath"], factory
   else
     root.Operation = factory root.operations, root.Q, root.utils
-)( @, (operations, Q, utils)->
+)( @, (operations, Q, utils, objectpath)->
+  parseObjectPath = ( pathStr )->
+    toReturn = {
+      base: pathStr,
+      path: []
+    }
+
+    parsedPath = objectpath.ObjectPath.parse( pathStr )
+
+    toReturn.base = parsedPath[0]
+    toReturn.path = parsedPath.splice(1)
+
+    toReturn
+
+  getPathFromObject = ( sourceObj, path )->
+    toReturn = sourceObj
+    path.forEach (part)->
+      toReturn = if toReturn[part] then toReturn[part] else Operation.EMPTY_VALUE
+
+    toReturn
+
 
   substitudeAttrAndValues = (operation, originalStr)->
     newStr = originalStr
@@ -11,22 +31,29 @@
     parser = operation.getParser()
     m = newStr.match( /\{:(.+?):\}/ig )
 
+
+
+    #get attributes
     for fname in m || []
       el = /\{:(.+?):\}/.exec(fname)[1]
       if parser
-        attr = parser.getAttr el
+        parsedPath = parseObjectPath el
+        attr = parser.getAttr parsedPath.base
         if attr != Operation.EMPTY_VALUE
-          newStr = newStr.replace fname, attr
+          newStr = newStr.replace fname, getPathFromObject( attr, parsedPath.path )
 
     m = newStr.match( /\{:(.+?):\}/ig )
+    #get values
     for fname in m || []
       do ( fname )=>
         toWait = toWait.then ()=>
           el = /\{:(.+?):\}/.exec(fname)[1]
+          parsedPath = parseObjectPath el
+
           # console.log "newStr template getting field #{fname}, #{el}"
-          Q( operation.getValue el ).then (val)=>
+          Q( operation.getValue parsedPath.base ).then (val)=>
             # console.log 'got el', el, fname, val
-            newStr = newStr.replace fname, val || ''
+            newStr = newStr.replace fname, getPathFromObject( val, parsedPath.path ) || ''
 
     toWait.then ()-> newStr
 
@@ -128,6 +155,8 @@
 
       @substitudeAttrAndValues = (str)=>
         substitudeAttrAndValues @, str
+
+
 
       @getType = (config)->
         type = ''
@@ -238,6 +267,8 @@
     result
 
   Operation::operations = operations
+
+  Operation::parseObjectPath = parseObjectPath
 
   Operation::decorators = {
     post_processing: (value)->

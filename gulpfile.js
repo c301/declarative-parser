@@ -39,7 +39,8 @@ gulp.task('optimize', ['coffee'],function(cb){
         baseUrl: "build/public",
         optimize: "none",
         paths: {
-            q: "vendor/q"
+            q: "vendor/q",
+            objectpath: "vendor/objectpath
         },
         exclude: [ "q" ],
         name: "parser",

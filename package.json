@@ -1,7 +1,9 @@
 {
   "name": "package",
   "version": "0.0.0",
-  "dependencies": {},
+  "dependencies": {
+    "objectpath": "^1.2.1"
+  },
   "devDependencies": {
     "chai": "^1.9.1",
     "connect": "^3.4.0",

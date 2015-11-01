@@ -2,14 +2,33 @@ var __hasProp = {}.hasOwnProperty;
 
 (function(root, factory) {
   if (typeof define === "function" && define.amd) {
-    return define(["operations", "q", "utils"], factory);
+    return define(["operations", "q", "utils", "objectpath"], factory);
   } else {
     return root.Operation = factory(root.operations, root.Q, root.utils);
   }
-})(this, function(operations, Q, utils) {
-  var Operation, substitudeAttrAndValues;
+})(this, function(operations, Q, utils, objectpath) {
+  var Operation, getPathFromObject, parseObjectPath, substitudeAttrAndValues;
+  parseObjectPath = function(pathStr) {
+    var parsedPath, toReturn;
+    toReturn = {
+      base: pathStr,
+      path: []
+    };
+    parsedPath = objectpath.ObjectPath.parse(pathStr);
+    toReturn.base = parsedPath[0];
+    toReturn.path = parsedPath.splice(1);
+    return toReturn;
+  };
+  getPathFromObject = function(sourceObj, path) {
+    var toReturn;
+    toReturn = sourceObj;
+    path.forEach(function(part) {
+      return toReturn = toReturn[part] ? toReturn[part] : Operation.EMPTY_VALUE;
+    });
+    return toReturn;
+  };
   substitudeAttrAndValues = function(operation, originalStr) {
-    var attr, el, fname, m, newStr, parser, toWait, _fn, _i, _j, _len, _len1, _ref, _ref1;
+    var attr, el, fname, m, newStr, parsedPath, parser, toWait, _fn, _i, _j, _len, _len1, _ref, _ref1;
     newStr = originalStr;
     toWait = Q(true);
     parser = operation.getParser();
@@ -19,9 +38,10 @@ var __hasProp = {}.hasOwnProperty;
       fname = _ref[_i];
       el = /\{:(.+?):\}/.exec(fname)[1];
       if (parser) {
-        attr = parser.getAttr(el);
+        parsedPath = parseObjectPath(el);
+        attr = parser.getAttr(parsedPath.base);
         if (attr !== Operation.EMPTY_VALUE) {
-          newStr = newStr.replace(fname, attr);
+          newStr = newStr.replace(fname, getPathFromObject(attr, parsedPath.path));
         }
       }
     }
@@ -31,8 +51,9 @@ var __hasProp = {}.hasOwnProperty;
       return function(fname) {
         return toWait = toWait.then(function() {
           el = /\{:(.+?):\}/.exec(fname)[1];
-          return Q(operation.getValue(el)).then(function(val) {
-            return newStr = newStr.replace(fname, val || '');
+          parsedPath = parseObjectPath(el);
+          return Q(operation.getValue(parsedPath.base)).then(function(val) {
+            return newStr = newStr.replace(fname, getPathFromObject(val, parsedPath.path) || '');
           });
         });
       };
@@ -298,6 +319,7 @@ var __hasProp = {}.hasOwnProperty;
     return result;
   };
   Operation.prototype.operations = operations;
+  Operation.prototype.parseObjectPath = parseObjectPath;
   Operation.prototype.decorators = {
     post_processing: function(value) {
       return this.decorators.postProcessing.bind(this)(value);

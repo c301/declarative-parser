@@ -310,6 +310,42 @@ describe("Specific Operations", function() {
       return expect(res).to.have.a.property("templating", "check index 3 and price $ 301");
     });
   });
+  it("html_template_access", function() {
+    var config, parser;
+    config = [
+      {
+        name: "price",
+        operations: [
+          {
+            type: "manual",
+            value: [
+              {
+                "hi": "there"
+              }, {
+                "hello": {
+                  "there": "val1"
+                }
+              }
+            ]
+          }
+        ]
+      }, {
+        "name": "templating",
+        "operations": [
+          {
+            "type": "html_template",
+            "template": "check index {:index:} and price {:price[0].hi:} {:price[1]['hello'].there:}{:price[2]:}{:price[1].hi:}{:price1:}"
+          }
+        ]
+      }
+    ];
+    parser = new Parser();
+    parser.setAttr("index", "3");
+    return parser.parse(config).then(function(res) {
+      console.log(res.templating);
+      return expect(res).to.have.a.property("templating", "check index 3 and price there val1");
+    });
+  });
   return it("html_template all", function() {
     var config, parser;
     config = [

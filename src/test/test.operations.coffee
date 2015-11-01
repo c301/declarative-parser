@@ -247,6 +247,36 @@ describe "Specific Operations", () ->
       expect res
       .to.have.a.property "templating", "check index 3 and price $ 301"
 
+  it "html_template_access", ()->
+    config = [
+      { name : "price", operations: [
+        { type: "manual", value: [
+          {
+            "hi": "there"
+          },
+          {
+            "hello": {
+              "there": "val1"
+            }
+          }
+        ] }
+      ] }
+      ,
+      {
+        "name": "templating",
+        "operations": [
+          { "type": "html_template", 
+          "template": "check index {:index:} and price {:price[0].hi:} {:price[1]['hello'].there:}{:price[2]:}{:price[1].hi:}{:price1:}"}
+        ]
+      }
+    ]
+    parser = new Parser()
+    parser.setAttr "index", "3"
+    parser.parse( config ).then (res)->
+      console.log res.templating
+      expect res
+      .to.have.a.property "templating", "check index 3 and price there val1"
+
   it "html_template all", ()->
     config = [
       { name : "price1", "value": "1" },
