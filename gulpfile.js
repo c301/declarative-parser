@@ -40,7 +40,7 @@ gulp.task('optimize', ['coffee'],function(cb){
         optimize: "none",
         paths: {
             q: "vendor/q",
-            objectpath: "vendor/objectpath
+            objectpath: "vendor/objectpath"
         },
         exclude: [ "q" ],
         name: "parser",

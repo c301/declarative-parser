@@ -2,8 +2,9 @@
   if typeof define == "function" && define.amd
     define ["operations", "q", "utils", "objectpath"], factory
   else
-    root.Operation = factory root.operations, root.Q, root.utils
+    root.Operation = factory root.operations, root.Q, root.utils, { ObjectPath: root.ObjectPath }
 )( @, (operations, Q, utils, objectpath)->
+
   parseObjectPath = ( pathStr )->
     toReturn = {
       base: pathStr,

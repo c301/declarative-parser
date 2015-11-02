@@ -4,7 +4,9 @@ var __hasProp = {}.hasOwnProperty;
   if (typeof define === "function" && define.amd) {
     return define(["operations", "q", "utils", "objectpath"], factory);
   } else {
-    return root.Operation = factory(root.operations, root.Q, root.utils);
+    return root.Operation = factory(root.operations, root.Q, root.utils, {
+      ObjectPath: root.ObjectPath
+    });
   }
 })(this, function(operations, Q, utils, objectpath) {
   var Operation, getPathFromObject, parseObjectPath, substitudeAttrAndValues;
