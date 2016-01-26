@@ -66,7 +66,7 @@ gulp.task('copy', ['optimize'],function(cb){
     };
     var oldFile = fs.createReadStream(config.out);
     var newFile = fs
-        .createWriteStream('/home/c301/JOB/Rooof/extension/chrome-extension/src/js/syndication/dparser.min.js');
+        .createWriteStream('C:\\Users\\c301\\Documents\\JOB\\Rooof\\extension\\chrome-extension\\src\\js\\syndication\\dparser.js');
     oldFile.on('end', function () {
       console.log('Copy end');
       cb();
