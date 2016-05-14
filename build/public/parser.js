@@ -13,6 +13,7 @@ var __hasProp = {}.hasOwnProperty,
     function Parser(config) {
       this.handleConfig(config);
       this.parsingConfig = {};
+      this.afterParseRule = config ? config.afterParse : false;
       this.result = {};
       this.value = function(valName, op, cb) {
         var field, res, toResolve, valResult;
@@ -23,7 +24,7 @@ var __hasProp = {}.hasOwnProperty,
           } else {
             return valResult;
           }
-        } else if (this.preBuildResults[valName]) {
+        } else if (this.preBuildResults[valName] || this.preBuildResults[valName] === false) {
           if (cb && typeof cb === 'function') {
             return Q(this.preBuildResults[valName] || Operation.EMPTY_VALUE).then(function(val) {
               return cb(val);
@@ -308,7 +309,7 @@ var __hasProp = {}.hasOwnProperty,
     return new Operation(evalConfig).setField(value).setParser(this);
   };
   Parser.prototype.resolveValue = function(value, operation) {
-    var o;
+    var o, ops;
     if (this.config.onFieldParsing) {
       this.config.onFieldParsing(value.name, value);
     }
@@ -316,7 +317,7 @@ var __hasProp = {}.hasOwnProperty,
       return Parser.cache[value.name];
     } else if (this.result[value.name]) {
       return this.result[value.name];
-    } else if (this.preBuildResults[value.name]) {
+    } else if (this.preBuildResults[value.name] || this.preBuildResults[value.name] === false) {
       return this.preBuildResults[value.name];
     } else {
       if (operation) {
@@ -326,7 +327,11 @@ var __hasProp = {}.hasOwnProperty,
           value.parentFields = [operation.getField()];
         }
       }
-      o = this.createOperationForValue(value, value.operations || value.value);
+      ops = value.operations;
+      if (this.afterParseRule && this.afterParseRule[value.name] && ops) {
+        ops = ops.concat(this.afterParseRule[value.name] || []);
+      }
+      o = this.createOperationForValue(value, ops || value.value);
       return o.evaluate(value.value).then((function(_this) {
         return function(res) {
           if (value.persist) {

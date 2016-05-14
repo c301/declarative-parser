@@ -102,11 +102,7 @@ var __hasProp = {}.hasOwnProperty;
           if (!this._evaluate) {
             Operation.EMPTY_VALUE;
           } else {
-            Q.fcall((function(_this) {
-              return function() {
-                return _this._evaluate(value);
-              };
-            })(this)).then((function(_this) {
+            Q(this._evaluate(value)).then((function(_this) {
               return function(result) {
                 return Q.fcall(function() {
                   return _this.decorate(result);

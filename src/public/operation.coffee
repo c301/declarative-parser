@@ -93,9 +93,7 @@
           d.resolve value
         else
           if !@_evaluate then Operation.EMPTY_VALUE else
-            Q.fcall( ()=>
-              @_evaluate value
-            )
+            Q(@_evaluate value)
             .then(
                 ( result )=>
                   Q.fcall( ()=>

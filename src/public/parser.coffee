@@ -8,6 +8,7 @@
     constructor: (config)->
       @handleConfig config
       @parsingConfig = {}
+      @afterParseRule = if config then config.afterParse else false 
       #reset result
       @result = {}
       #value getter
@@ -21,7 +22,7 @@
               cb( valResult )
           else
             valResult
-        else if @preBuildResults[valName]
+        else if @preBuildResults[valName] or @preBuildResults[valName] == false
           # return value from pre built results, eg results of prev parsing
           # console.log "parser.value return prebuilresult", @preBuildResults[valName]
           if cb && typeof cb == 'function'
@@ -286,7 +287,8 @@
       Parser.cache[value.name]
     else if @result[value.name]
       @result[ value.name ]
-    else if @preBuildResults[value.name]
+
+    else if @preBuildResults[value.name] or @preBuildResults[value.name] == false
       @preBuildResults[value.name]
     else 
       if operation
@@ -295,7 +297,11 @@
           value.parentFields.push operation.getField()
         else
           value.parentFields = [operation.getField()]
-      o = @createOperationForValue value, value.operations || value.value
+      ops = value.operations
+      if @afterParseRule and @afterParseRule[value.name] and ops
+        ops = ops.concat @afterParseRule[value.name] or []
+
+      o = @createOperationForValue value, ops || value.value
       o.evaluate( value.value )
       .then ( res )=>
           if(value.persist)
