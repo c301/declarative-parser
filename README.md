@@ -33,8 +33,11 @@ var parserConfig = {
     //hooks. All hooks should return something to rewrite default behavior
     beforeParse: function( parseConfig ){  },
     afterParse: function( parseResult ){  },
-    beforeParseValue: function( valueConfig ){  },
-    afterParseValue: function( valueConfig, result ){  },
+    parseHooks: {
+        price: {
+            after: function( value ){ }
+        }
+    },
     onGetValue: function( valueName ){  },
 
     operations: {},
@@ -48,6 +51,14 @@ Parser Config
 =============
 - "debug" - if positive, output debug information to console
 - "prompt" - JS function to ask for user input ( native `window.prompt` used by default). Return `null` to break parsing
+- "parseHooks" - functions to adjust values after parse. Example:
+```
+parseHooks: {
+    price: {
+        after: function( value ){ return value.trim(); }
+    }
+}
+```
 
 General attributes of the operations:
 -------------------------------------

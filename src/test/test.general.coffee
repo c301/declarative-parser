@@ -699,3 +699,28 @@ describe "General parsing", ()->
         done(new Error "Wrong parsing result")
       else
         done()
+
+  it "Parser hooks", (done)->
+    @timeout 3000
+    parser = new Parser({
+      parseHooks : {
+        price : {
+            after: (val)->
+              console.log( "after hook", val )
+              if val == "$ 301"
+                "hello"
+              else
+                val
+        }
+      }
+    })
+    parser.parse( [
+      { name : "price", operations: [
+        { type: "xpath", xpath: ".//*[@class='price']" },
+        { attribute: "textContent", "num_in_array": 0 }
+      ] }
+    ] ).then (res)->
+      if res.price != "hello"
+        done(new Error "Wrong parsing result")
+      else
+        done()

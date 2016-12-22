@@ -640,7 +640,7 @@ describe("General parsing", function() {
       return expect(res).to.have.a.property("price", "$ 301");
     });
   });
-  return it("Pass custom decorators", function(done) {
+  it("Pass custom decorators", function(done) {
     var parser;
     this.timeout(30000);
     parser = new Parser();
@@ -668,6 +668,44 @@ describe("General parsing", function() {
       }
     ]).then(function(res) {
       if (res.price !== "$ 301") {
+        return done(new Error("Wrong parsing result"));
+      } else {
+        return done();
+      }
+    });
+  });
+  return it("Parser hooks", function(done) {
+    var parser;
+    this.timeout(3000);
+    parser = new Parser({
+      parserHooks: {
+        price: {
+          after: function(val) {
+            console.log("after hook", val);
+            if (val === "$ 301") {
+              return "hello";
+            } else {
+              return val;
+            }
+          }
+        }
+      }
+    });
+    return parser.parse([
+      {
+        name: "price",
+        operations: [
+          {
+            type: "xpath",
+            xpath: ".//*[@class='price']"
+          }, {
+            attribute: "textContent",
+            "num_in_array": 0
+          }
+        ]
+      }
+    ]).then(function(res) {
+      if (res.price !== "hello") {
         return done(new Error("Wrong parsing result"));
       } else {
         return done();

@@ -218,6 +218,12 @@
       queue.then ()=>
         config.forEach ( value )=>
           queue = queue.then ()=> handleValue(value)
+          queue = queue.then ()=>
+            if @config.parseHooks && @config.parseHooks[value.name] && @config.parseHooks[value.name].after
+              Q( @config.parseHooks[value.name].after( @result[ value.name ] ) ).then (res)=>
+                @result[ value.name ] = res
+
+              
 
         queue.then(
           ()->
