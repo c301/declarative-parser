@@ -678,7 +678,7 @@ describe("General parsing", function() {
     var parser;
     this.timeout(3000);
     parser = new Parser({
-      parserHooks: {
+      parseHooks: {
         price: {
           after: function(val) {
             console.log("after hook", val);

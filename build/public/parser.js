@@ -240,8 +240,8 @@ var __hasProp = {}.hasOwnProperty,
               return handleValue(value);
             });
             return queue = queue.then(function() {
-              if (_this.config.parserHooks && _this.config.parserHooks[value.name] && _this.config.parserHooks[value.name].after) {
-                return Q(_this.config.parserHooks[value.name].after(_this.result[value.name])).then(function(res) {
+              if (_this.config.parseHooks && _this.config.parseHooks[value.name] && _this.config.parseHooks[value.name].after) {
+                return Q(_this.config.parseHooks[value.name].after(_this.result[value.name])).then(function(res) {
                   return _this.result[value.name] = res;
                 });
               }
@@ -375,7 +375,7 @@ var __hasProp = {}.hasOwnProperty,
       if (this.defaultValues[config.name] && !result) {
         return this.defaultValues[config.name];
       } else if (config.required && !result) {
-        promptText = config.prompt_text || "Please set value for " + (config.label ? config.label : config.name);
+        promptText = config.prompt_text || "Please provide a " + (config.label ? config.label : config.name);
         result = this.config.prompt(promptText, config);
         return Q.when(result).then((function(_this) {
           return function(userInput) {

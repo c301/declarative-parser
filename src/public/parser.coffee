@@ -337,7 +337,7 @@
       if @defaultValues[config.name] and !result
         @defaultValues[config.name]
       else if config.required && !result
-        promptText = config.prompt_text || "Please set value for " + ( if config.label then config.label else config.name )
+        promptText = config.prompt_text || "Please provide a " + ( if config.label then config.label else config.name )
 
         result = @config.prompt promptText, config
 
