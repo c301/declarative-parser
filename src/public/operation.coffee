@@ -171,7 +171,7 @@
           "js" : "js_eval"
           "separator" : "split"
 
-        if config.type != undefined
+        if config && config.type != undefined
         then type = config.type
         else for own attr, typeName of type_mapping
           if typeof config[attr] != "undefined"
