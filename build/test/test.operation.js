@@ -114,18 +114,20 @@ describe("Operations testing", function() {
         return expect(res).to.equal("301");
       });
     });
-    return it("final", function() {
+    it("final", function() {
       var d, op;
       op = new Operation([
         {
           "type": "xpath",
           "xpath": "string(.//*[@class='price'])",
           "prefix": "Price: "
-        }, {
+        },
+        {
           "type": "manual",
           "value": "Price",
           "final": true
-        }, {
+        },
+        {
           "type": "manual",
           "value": "Price 301"
         }
@@ -133,6 +135,28 @@ describe("Operations testing", function() {
       d = op.evaluate();
       return d.then(function(res) {
         return expect(res).to.equal("Price 301");
+      });
+    });
+    return it("final empty array", function() {
+      var d, op;
+      op = new Operation([
+        {
+          "type": "manual",
+          "value": []
+        },
+        {
+          "type": "manual",
+          "value": "Price",
+          "final": true
+        },
+        {
+          "type": "manual",
+          "value": "301"
+        }
+      ]);
+      d = op.evaluate();
+      return d.then(function(res) {
+        return expect(res).to.equal("301");
       });
     });
   });
@@ -172,7 +196,7 @@ describe("Operations testing", function() {
       var op;
       op = new Operation({
         type: "manual",
-        "default": "def_value",
+        default: "def_value",
         value: false
       });
       return op.evaluate().then(function(value) {
@@ -183,7 +207,7 @@ describe("Operations testing", function() {
       var op;
       op = new Operation({
         type: "manual",
-        "default": "def_value",
+        default: "def_value",
         value: true
       });
       return op.evaluate().then(function(value) {
@@ -230,13 +254,16 @@ describe("Operations testing", function() {
       ops = [
         {
           "type": "xpath"
-        }, {
+        },
+        {
           "type": "wait",
           "delay": "500"
-        }, {
+        },
+        {
           "type": "manual",
           "value": "42"
-        }, {
+        },
+        {
           "type": "xpath",
           "xpath": "string(.//*[@class='price'])"
         }

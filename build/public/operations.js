@@ -1,5 +1,5 @@
-var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
-  __hasProp = {}.hasOwnProperty;
+var indexOf = [].indexOf,
+  hasProp = {}.hasOwnProperty;
 
 (function(root, factory) {
   if (typeof define === "function" && define.amd) {
@@ -10,6 +10,7 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
 })(this, function(Q, utils) {
   var operations;
   operations = {};
+  //config can be accessed via this.config
   operations.manual = function() {
     if (this.config && typeof this.config.value !== "undefined") {
       return this.config.value;
@@ -17,110 +18,110 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
       return Operation.EMPTY_VALUE;
     }
   };
+  //we can pass existing value (from previos operation) as argument
   operations.regex = function(value) {
     var applyRegex, toReturn;
-    applyRegex = (function(_this) {
-      return function(value) {
-        var modifier, nextRes, reg, res, toReturn;
-        toReturn = Operation.EMPTY_VALUE;
-        if (value) {
-          modifier = "";
-          if (typeof _this.config.modifier !== 'undefined') {
-            modifier = _this.config.modifier;
-          }
-          reg = new RegExp(_this.config.regex, modifier);
-          if (__indexOf.call(modifier, 'g') >= 0) {
-            toReturn = [];
-            while ((nextRes = reg.exec(value)) !== null) {
-              if (nextRes) {
-                if (_this.config.full) {
-                  toReturn.push(nextRes);
-                } else {
-                  toReturn.push(nextRes[1]);
-                }
+    applyRegex = (value) => {
+      var modifier, nextRes, reg, res, toReturn;
+      toReturn = Operation.EMPTY_VALUE;
+      if (value) {
+        modifier = "";
+        if (typeof this.config.modifier !== 'undefined') {
+          modifier = this.config.modifier;
+        }
+        reg = new RegExp(this.config.regex, modifier);
+        if (indexOf.call(modifier, 'g') >= 0) {
+          toReturn = [];
+          while ((nextRes = reg.exec(value)) !== null) {
+            if (nextRes) {
+              if (this.config.full) {
+                toReturn.push(nextRes);
+              } else {
+                toReturn.push(nextRes[1]);
               }
+            }
+          }
+        } else {
+          res = reg.exec(value);
+          if (this.config.full) {
+            if (res) {
+              toReturn = res;
+            } else {
+              toReturn = Operation.EMPTY_VALUE;
             }
           } else {
-            res = reg.exec(value);
-            if (_this.config.full) {
-              if (res) {
-                toReturn = res;
-              } else {
-                toReturn = Operation.EMPTY_VALUE;
-              }
+            if (res) {
+              toReturn = res[1];
             } else {
-              if (res) {
-                toReturn = res[1];
-              } else {
-                toReturn = Operation.EMPTY_VALUE;
-              }
+              toReturn = Operation.EMPTY_VALUE;
             }
           }
-          return toReturn;
-        } else {
-          return Operation.EMPTY_VALUE;
         }
-      };
-    })(this);
+        return toReturn;
+      } else {
+        return Operation.EMPTY_VALUE;
+      }
+    };
     if (Array.isArray(value)) {
       return toReturn = value.map(applyRegex);
     } else {
       return applyRegex(value);
     }
   };
+  //we have to use this.getDoc() in order to use right document
   operations.xpath = function(value) {
     var xpath;
     xpath = this.config.xpath;
     if (xpath) {
-      return this.substitudeAttrAndValues(xpath).then((function(_this) {
-        return function(xpath) {
-          var d;
-          console.log('=== xpath', xpath);
-          if (_this.config.document_url) {
+      return this.substitudeAttrAndValues(xpath).then((xpath) => {
+        var d;
+        console.log('=== xpath', xpath);
+        if (this.config.document_url) {
+          // console.log("Xpath: document_url detected")
+          d = Q.defer();
+          this.createOperation(this.config.document_url).evaluate().then((result) => {
+            var xhr;
+            // console.log("Xpath: document_url %s", result)
+            xhr = new XMLHttpRequest();
+            xhr.open('GET', result, true);
+            xhr.onload = (e) => {
+              var doc, parser, txt, xpathResult;
+              if (xhr.status === 200) {
+                txt = xhr.responseText;
+                parser = new DOMParser();
+                doc = parser.parseFromString(txt, "text/html");
+                return xpathResult = utils.xpathEval(doc, xpath);
+              } else {
+                return d.resolve(new Error());
+              }
+            };
+            xhr.ontimeout = function(e) {
+              return d.resolve(new Error());
+            };
+            xhr.onerror = function(e) {
+              return d.resolve(new Error());
+            };
+            return xhr.send();
+          });
+          return d.promise;
+        } else {
+          if (this.config.doc) {
             d = Q.defer();
-            _this.createOperation(_this.config.document_url).evaluate().then(function(result) {
-              var xhr;
-              xhr = new XMLHttpRequest();
-              xhr.open('GET', result, true);
-              xhr.onload = function(e) {
-                var doc, parser, txt, xpathResult;
-                if (xhr.status === 200) {
-                  txt = xhr.responseText;
-                  parser = new DOMParser();
-                  doc = parser.parseFromString(txt, "text/html");
-                  return xpathResult = utils.xpathEval(doc, xpath);
-                } else {
-                  return d.resolve(new Error());
-                }
-              };
-              xhr.ontimeout = function(e) {
-                return d.resolve(new Error());
-              };
-              xhr.onerror = function(e) {
-                return d.resolve(new Error());
-              };
-              return xhr.send();
+            this.createOperation(this.config.doc).evaluate(value).then((doc) => {
+              var res;
+              res = utils.xpathEval(doc, xpath);
+              return d.resolve(res);
             });
             return d.promise;
           } else {
-            if (_this.config.doc) {
-              d = Q.defer();
-              _this.createOperation(_this.config.doc).evaluate(value).then(function(doc) {
-                var res;
-                res = utils.xpathEval(doc, xpath);
-                return d.resolve(res);
-              });
-              return d.promise;
+            if (value instanceof HTMLDocument || value instanceof XMLDocument) {
+              return utils.xpathEval(value, xpath);
             } else {
-              if (value instanceof HTMLDocument || value instanceof XMLDocument) {
-                return utils.xpathEval(value, xpath);
-              } else {
-                return utils.xpathEval(_this.getDoc(), xpath);
-              }
+              return utils.xpathEval(this.getDoc(), xpath);
             }
           }
-        };
-      })(this));
+        }
+      });
     } else {
       return Operation.EMPTY_VALUE;
     }
@@ -148,11 +149,11 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     if (value) {
       res = [];
       this.createOperation(this.config.attribute).evaluate().then(function(attribute) {
-        var e, el, _i, _len;
+        var e, el, j, len;
         try {
           if (!value[attribute] && value.length !== void 0) {
-            for (_i = 0, _len = value.length; _i < _len; _i++) {
-              el = value[_i];
+            for (j = 0, len = value.length; j < len; j++) {
+              el = value[j];
               if (el) {
                 res.push(getAttr(el, attribute));
               }
@@ -161,8 +162,8 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
             res = getAttr(value, attribute);
           }
           return d.resolve(res);
-        } catch (_error) {
-          e = _error;
+        } catch (error) {
+          e = error;
           console.log(e);
           return d.resolve(Operation.EMPTY_VALUE);
         }
@@ -179,77 +180,98 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
       value = [value];
     }
     toWait = [];
-    value.forEach((function(_this) {
-      return function(el) {
-        var calculateAttr, d, finalAttrs, k, v, _fn;
-        d = Q.defer();
-        finalAttrs = {};
-        calculateAttr = [];
-        _fn = function(k, v) {
-          var def;
-          def = _this.createOperation(v).evaluate(el).then(function(finalValue) {
-            return finalAttrs[k] = finalValue;
-          });
-          return calculateAttr.push(def);
-        };
-        for (k in attr) {
-          if (!__hasProp.call(attr, k)) continue;
-          v = attr[k];
-          _fn(k, v);
-        }
-        Q.allSettled(calculateAttr).then(function() {
-          for (k in finalAttrs) {
-            if (!__hasProp.call(finalAttrs, k)) continue;
-            v = finalAttrs[k];
-            el[k] = v;
-          }
-          return d.resolve();
+    value.forEach((el) => {
+      var calculateAttr, d, finalAttrs, fn, k, v;
+      d = Q.defer();
+      finalAttrs = {};
+      calculateAttr = [];
+      fn = (k, v) => {
+        var def;
+        def = this.createOperation(v).evaluate(el).then((finalValue) => {
+          return finalAttrs[k] = finalValue;
         });
-        return toWait.push(d.promise);
+        return calculateAttr.push(def);
       };
-    })(this));
+      for (k in attr) {
+        if (!hasProp.call(attr, k)) continue;
+        v = attr[k];
+        fn(k, v);
+      }
+      Q.allSettled(calculateAttr).then(() => {
+        for (k in finalAttrs) {
+          if (!hasProp.call(finalAttrs, k)) continue;
+          v = finalAttrs[k];
+          el[k] = v;
+        }
+        return d.resolve();
+      });
+      return toWait.push(d.promise);
+    });
     return Q.allSettled(toWait);
   };
+  // represents "if" statements
   operations.switchOf = function(value) {
     var execPosOrNeg;
-    execPosOrNeg = (function(_this) {
-      return function(res) {
-        if (!!res) {
-          return _this.createOperation(_this.config.positive).evaluate(value);
-        } else {
-          return _this.createOperation(_this.config.negative).evaluate(value);
-        }
-      };
-    })(this);
+    execPosOrNeg = (res) => {
+      if (!!res) {
+        return this.createOperation(this.config.positive).evaluate(value);
+      } else {
+        return this.createOperation(this.config.negative).evaluate(value);
+      }
+    };
     if (this.config.value) {
-      return this.createOperation(this.config.value).evaluate(value).then((function(_this) {
-        return function(res) {
-          return _this.createOperation(_this.config.flag).evaluate(res).then(function(res) {
-            return execPosOrNeg(res);
-          });
-        };
-      })(this));
-    } else if (this.config.flag) {
-      return this.createOperation(this.config.flag).evaluate(value).then((function(_this) {
-        return function(res) {
+      return this.createOperation(this.config.value).evaluate(value).then((res) => {
+        return this.createOperation(this.config.flag).evaluate(res).then((res) => {
+          //          console.log "Flag", res, @config.flag
           return execPosOrNeg(res);
-        };
-      })(this));
+        });
+      });
+    } else if (this.config.flag) {
+      // calculating flag
+      return this.createOperation(this.config.flag).evaluate(value).then((res) => {
+        //        console.log "Flag", res, @config.flag
+        return execPosOrNeg(res);
+      });
     } else {
+      // check value
       return execPosOrNeg(value);
     }
   };
+  //evaluate html template
   operations.html_template = function() {
     var html;
     html = this.config.template;
     return this.substitudeAttrAndValues(html);
   };
+  // operations.jsonpath = (value)->
+  //   console.log("JSONPath",value, @config.jsonpath);
+  //   d = Q.defer()
+  //   jsonpath = @config.jsonpath
+  //   toWait = []
+  //   for fname in jsonpath.match( /\{:(.+?):\}/ig )
+  //     do ( fname )=>
+  //       el = /\{:(.+?):\}/.exec(fname)[1]
+  //       def = Q( @getValue el).then (val)->
+  //         console.log el, val
+  //         jsonpath = jsonpath.replace fname, val || ''
+
+  //       toWait.push def
+
+  //   Q.allSettled toWait
+  //     .then ()=>
+  //       res = jsonPath.eval(value, jsonpath) console.log("JSONPath #{jsonpath} : #{res}")
+  //       d.resolve res
+
+  //   d.promise
   operations.values_to_map = function(value) {};
+  //return HTMLDocument according to current context
   operations.current_document = function() {
     return this.getDoc();
   };
+  //returns result of the comparison
   operations.equal = function(value) {
     var res;
+    //    console.log "equal", value, @config.value, @config.is_regex
     res = Operation.EMPTY_VALUE;
     if (this.config.is_regex) {
       res = new RegExp(this.config.value, "i").test(value);
@@ -261,75 +283,65 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
   operations.parsed_val = function() {
     var valueName;
     valueName = this.config.valName || this.config.name;
-    return Q(this.getValue(valueName)).then((function(_this) {
-      return function(value) {
-        if (typeof value === 'undefined') {
-          console.log("Warning: " + valueName + " not found");
-        }
-        return value;
-      };
-    })(this));
+    return Q(this.getValue(valueName)).then((value) => {
+      if (typeof value === 'undefined') {
+        console.log(`Warning: ${valueName} not found`);
+      }
+      return value;
+    });
   };
   operations.concatenation = function() {
-    var glue, part, parts, results, toWait, _fn, _i, _len;
+    var fn, glue, j, len, part, parts, results, toWait;
     parts = this.config.parts;
     glue = this.config.glue || "";
     results = [];
     toWait = Q(true);
-    _fn = (function(_this) {
-      return function(part) {
-        return toWait = toWait.then(function(res) {
-          return _this.createOperation(part).evaluate().then(function(res) {
-            return results.push(res);
-          });
+    fn = (part) => {
+      return toWait = toWait.then((res) => {
+        return this.createOperation(part).evaluate().then(function(res) {
+          return results.push(res);
         });
-      };
-    })(this);
-    for (_i = 0, _len = parts.length; _i < _len; _i++) {
-      part = parts[_i];
-      _fn(part);
+      });
+    };
+    for (j = 0, len = parts.length; j < len; j++) {
+      part = parts[j];
+      fn(part);
     }
-    return toWait.then((function(_this) {
-      return function() {
-        var result;
-        result = results.filter(function(val) {
-          if (val) {
-            return val;
-          }
-        });
-        return result = result.join(glue);
-      };
-    })(this));
+    return toWait.then(() => {
+      var result;
+      result = results.filter(function(val) {
+        if (val) {
+          return val;
+        }
+      });
+      return result = result.join(glue);
+    });
   };
   operations.collection = function() {
-    var d, part, parts, toWait, _fn, _i, _len;
+    var d, fn, j, len, part, parts, toWait;
     parts = this.config.parts;
     toWait = [];
     d = Q.defer();
-    _fn = (function(_this) {
-      return function(part) {
-        return toWait.push(_this.createOperation(part).evaluate().then(function(res) {
-          return res;
-        }));
-      };
-    })(this);
-    for (_i = 0, _len = parts.length; _i < _len; _i++) {
-      part = parts[_i];
-      _fn(part);
+    fn = (part) => {
+      return toWait.push(this.createOperation(part).evaluate().then(function(res) {
+        return res;
+      }));
+    };
+    for (j = 0, len = parts.length; j < len; j++) {
+      part = parts[j];
+      fn(part);
     }
-    Q.allSettled(toWait).then((function(_this) {
-      return function(res) {
-        var result;
-        result = res.map(function(v) {
-          return v.value;
-        });
-        return d.resolve(result.filter(function(val) {
-          if (val) {
-            return val;
-          }
-        }));
-      };
-    })(this));
+    Q.allSettled(toWait).then((res) => {
+      var result;
+      result = res.map(function(v) {
+        return v.value;
+      });
+      return d.resolve(result.filter(function(val) {
+        if (val) {
+          return val;
+        }
+      }));
+    });
     return d.promise;
   };
   operations.parseJSON = function(value) {
@@ -362,37 +374,36 @@ var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; 
     return wrongVar;
   };
   operations.js_eval = function() {
-    var d, i, js, m, promises, res, _fn, _i, _len;
+    var d, fn, i, j, js, len, m, promises, res;
     js = this.config.js;
     d = Q.defer();
     m = js.match(/\{:(.+?):\}/ig);
     if (m) {
       promises = [];
-      _fn = (function(_this) {
-        return function(i) {
-          var el, tmp, val;
-          el = /\{:(.+?):\}/.exec(i)[1];
-          val = Q(_this.getValue(el));
-          tmp = val.then(function(replacer) {
-            if (!replacer) {
-              replacer = '';
-            }
-            return js = js.replace(i, replacer);
-          });
-          return promises.push(tmp);
-        };
-      })(this);
-      for (_i = 0, _len = m.length; _i < _len; _i++) {
-        i = m[_i];
-        _fn(i);
+      fn = (i) => {
+        var el, tmp, val;
+        el = /\{:(.+?):\}/.exec(i)[1];
+        val = Q(this.getValue(el));
+        // console.log "1 js_eval getting", i, val
+        tmp = val.then(function(replacer) {
+          if (!replacer) {
+            replacer = '';
+          }
+          return js = js.replace(i, replacer);
+        });
+        
+        // console.log "js_eval", i, replacer, js
+        return promises.push(tmp);
+      };
+      for (j = 0, len = m.length; j < len; j++) {
+        i = m[j];
+        fn(i);
       }
-      Q.allSettled(promises).then((function(_this) {
-        return function() {
-          var res;
-          res = eval(js);
-          return d.resolve(res);
-        };
-      })(this));
+      Q.allSettled(promises).then(() => {
+        var res;
+        res = eval(js);
+        return d.resolve(res);
+      });
     } else {
       res = eval(js);
       d.resolve(res);

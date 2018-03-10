@@ -6,7 +6,7 @@ describe("Specific Operations", function() {
     d = new Operation({
       type: "wait",
       delay: "1000",
-      "default": "1 seconds passed"
+      default: "1 seconds passed"
     }).evaluate();
     return d.then(function(text) {
       return expect(text).to.equal("1 seconds passed");
@@ -17,7 +17,8 @@ describe("Specific Operations", function() {
       {
         name: "test_split",
         operations: [
-          "", {
+          "",
+          {
             type: "split",
             separator: ","
           }
@@ -38,13 +39,15 @@ describe("Specific Operations", function() {
             xpath: "string(.//*[@class='price'])"
           }
         ]
-      }, {
+      },
+      {
         name: "clear_price",
         operations: [
           {
             type: "parsed_val",
             valName: "price"
-          }, {
+          },
+          {
             type: "regex",
             regex: "(\\d+)"
           }
@@ -66,7 +69,8 @@ describe("Specific Operations", function() {
             value: "price"
           }
         ]
-      }, {
+      },
+      {
         "name": "xpathing",
         "operations": [
           {
@@ -87,12 +91,14 @@ describe("Specific Operations", function() {
       {
         name: "price",
         value: "abdADasdlfk"
-      }, {
+      },
+      {
         name: "clear_price",
         operations: [
           {
             "valName": "price"
-          }, {
+          },
+          {
             type: "regex",
             regex: "([A-Z]{2})",
             modifier: ""
@@ -109,12 +115,14 @@ describe("Specific Operations", function() {
       {
         name: "price",
         value: "3abdAD3abasdlfkab"
-      }, {
+      },
+      {
         name: "clear_price",
         operations: [
           {
             "valName": "price"
-          }, {
+          },
+          {
             type: "regex",
             regex: "\\d(ab)",
             modifier: "g"
@@ -132,14 +140,20 @@ describe("Specific Operations", function() {
         name: "price",
         operations: {
           type: "manual",
-          value: ["$1234", "hi $31", null, "hello $me $2", ""]
+          value: ["$1234",
+      "hi $31",
+      null,
+      "hello $me $2",
+      ""]
         }
-      }, {
+      },
+      {
         name: "clear_price",
         operations: [
           {
             "valName": "price"
-          }, {
+          },
+          {
             type: "regex",
             regex: "\\$(\\d+)"
           }
@@ -158,9 +172,11 @@ describe("Specific Operations", function() {
     op = new Operation([
       {
         "type": "current_document"
-      }, {
+      },
+      {
         "attribute": "location"
-      }, {
+      },
+      {
         "attribute": "href"
       }
     ]);
@@ -173,11 +189,13 @@ describe("Specific Operations", function() {
     op = new Operation([
       {
         "type": "current_document"
-      }, {
+      },
+      {
         "attribute": {
           "value": "location"
         }
-      }, {
+      },
+      {
         "attribute": "href"
       }
     ]);
@@ -190,9 +208,11 @@ describe("Specific Operations", function() {
     op = new Operation([
       {
         "type": "current_document"
-      }, {
+      },
+      {
         "attribute": "location"
-      }, {
+      },
+      {
         "attribute": "href"
       }
     ]);
@@ -227,7 +247,8 @@ describe("Specific Operations", function() {
     op = new Operation([
       {
         "value": "{ \"price\": \"301\" }"
-      }, {
+      },
+      {
         "type": "parseJSON"
       }
     ]);
@@ -240,7 +261,8 @@ describe("Specific Operations", function() {
     op = new Operation([
       {
         "value": "value1,value2,value3"
-      }, {
+      },
+      {
         "type": "split",
         "separator": ",",
         "num_in_array": 1
@@ -263,13 +285,15 @@ describe("Specific Operations", function() {
               "type": "wait",
               "delay": "700"
             }
-          }, {
+          },
+          {
             "value": "val2",
             "postProcessing": {
               "type": "wait",
               "delay": "500"
             }
-          }, {
+          },
+          {
             "value": "val3",
             "postProcessing": {
               "type": "wait",
@@ -294,7 +318,8 @@ describe("Specific Operations", function() {
             xpath: "string(.//*[@class='price'])"
           }
         ]
-      }, {
+      },
+      {
         "name": "templating",
         "operations": [
           {
@@ -321,7 +346,8 @@ describe("Specific Operations", function() {
             value: [
               {
                 "hi": "there"
-              }, {
+              },
+              {
                 "hello": {
                   "there": "val1"
                 }
@@ -329,7 +355,8 @@ describe("Specific Operations", function() {
             ]
           }
         ]
-      }, {
+      },
+      {
         "name": "templating",
         "operations": [
           {
@@ -352,13 +379,16 @@ describe("Specific Operations", function() {
       {
         name: "price1",
         "value": "1"
-      }, {
+      },
+      {
         name: "price2",
         "value": "2"
-      }, {
+      },
+      {
         name: "price3",
         "value": "3"
-      }, {
+      },
+      {
         "name": "templating",
         "operations": [
           {

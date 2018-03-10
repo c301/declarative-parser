@@ -6,14 +6,14 @@
   }
 })(this, function() {
   return {
-
     /*
     Evaluate xpath string
     @param aNode context node
     @param aExpr Xpath expression
-     */
+    */
     xpathEval: function(aNode, aExpr) {
       var e, found, nsResolver, res, result, xpe;
+      //passed only expresion
       if (arguments.length === 1) {
         aExpr = aNode;
         aNode = document;
@@ -22,8 +22,8 @@
       nsResolver = xpe.createNSResolver(aNode.ownerDocument === null ? aNode.documentElement : aNode.ownerDocument.documentElement);
       try {
         result = xpe.evaluate(aExpr, aNode, nsResolver, 0, null);
-      } catch (_error) {
-        e = _error;
+      } catch (error) {
+        e = error;
         console.log(e);
         return false;
       }

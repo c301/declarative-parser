@@ -167,10 +167,12 @@ describe("Parser", function() {
       {
         "name": "property_type",
         "value": "apartment"
-      }, {
+      },
+      {
         "name": "building_sqft",
         "value": ""
-      }, {
+      },
+      {
         "name": "furnished",
         "value": 0
       }
@@ -193,7 +195,8 @@ describe("Parser", function() {
             "xpath": "string(.//*[@class='{:price_name:}'])"
           }
         ]
-      }, {
+      },
+      {
         "name": "price",
         "operations": [
           {
@@ -243,13 +246,16 @@ describe("Parser", function() {
       {
         "name": "property_type_0",
         "value": "apartment"
-      }, {
+      },
+      {
         "name": "property_type_1",
         "value": "apartment"
-      }, {
+      },
+      {
         "name": "property_type_2",
         "value": "apartment"
-      }, {
+      },
+      {
         "name": "property_type_3",
         "value": "apartment"
       }
@@ -271,6 +277,7 @@ describe("Parser", function() {
       }
     ];
     parser = new Parser({
+      //use custom prompt
       prompt: function() {
         return null;
       }
@@ -290,6 +297,7 @@ describe("Parser", function() {
       }
     ];
     parser = new Parser({
+      //use custom prompt
       prompt: function() {
         return null;
       }
@@ -309,13 +317,15 @@ describe("Parser", function() {
             "valName": "property_type_0"
           }
         ]
-      }, {
+      },
+      {
         "name": "property_type_0",
         "required": true,
         "value": ""
       }
     ];
     parser = new Parser({
+      //use custom prompt
       prompt: function() {
         console.log('prompt');
         return null;
@@ -336,13 +346,15 @@ describe("Parser", function() {
             "template": "{:property_type_0:}{:property_type_0:}"
           }
         ]
-      }, {
+      },
+      {
         "name": "property_type_0",
         "required": true,
         "value": ""
       }
     ];
     parser = new Parser({
+      //use custom prompt
       prompt: function() {
         console.log('prompt');
         return null;
@@ -364,7 +376,8 @@ describe("Parser", function() {
             "value": false
           }
         ]
-      }, {
+      },
+      {
         "name": "property_type_0",
         "required": true,
         "operations": [
@@ -383,13 +396,15 @@ describe("Parser", function() {
             "template": "{:property_type_0:}"
           }
         ]
-      }, {
+      },
+      {
         "name": "property_type_2",
         "value": "hi2"
       }
     ];
     parser = new Parser({
       defaultConfig: defaultConfig,
+      //use custom prompt
       prompt: function() {
         console.log('prompt');
         return null;
@@ -434,7 +449,8 @@ describe("Parser", function() {
             "template": "hello {:location:}"
           }
         ]
-      }, {
+      },
+      {
         "name": "addr_string",
         "operations": [
           {
@@ -447,7 +463,8 @@ describe("Parser", function() {
             ]
           }
         ]
-      }, {
+      },
+      {
         "name": "postal_code",
         "required": true,
         "operations": [
@@ -471,6 +488,7 @@ describe("Parser", function() {
     parser = new Parser({
       debug: false,
       defaultConfig: defaultConfig,
+      //use custom prompt
       prompt: function() {
         console.log('prompt', arguments);
         return null;

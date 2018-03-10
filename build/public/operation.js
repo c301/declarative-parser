@@ -1,4 +1,4 @@
-var __hasProp = {}.hasOwnProperty;
+var hasProp = {}.hasOwnProperty;
 
 (function(root, factory) {
   if (typeof define === "function" && define.amd) {
@@ -30,14 +30,15 @@ var __hasProp = {}.hasOwnProperty;
     return toReturn;
   };
   substitudeAttrAndValues = function(operation, originalStr) {
-    var attr, el, fname, m, newStr, parsedPath, parser, toWait, _fn, _i, _j, _len, _len1, _ref, _ref1;
+    var attr, el, fn, fname, i, j, len, len1, m, newStr, parsedPath, parser, ref, ref1, toWait;
     newStr = originalStr;
     toWait = Q(true);
     parser = operation.getParser();
     m = newStr.match(/\{:(.+?):\}/ig);
-    _ref = m || [];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      fname = _ref[_i];
+    ref = m || [];
+    //get attributes
+    for (i = 0, len = ref.length; i < len; i++) {
+      fname = ref[i];
       el = /\{:(.+?):\}/.exec(fname)[1];
       if (parser) {
         parsedPath = parseObjectPath(el);
@@ -48,45 +49,47 @@ var __hasProp = {}.hasOwnProperty;
       }
     }
     m = newStr.match(/\{:(.+?):\}/ig);
-    _ref1 = m || [];
-    _fn = (function(_this) {
-      return function(fname) {
-        return toWait = toWait.then(function() {
-          el = /\{:(.+?):\}/.exec(fname)[1];
-          parsedPath = parseObjectPath(el);
-          return Q(operation.getValue(parsedPath.base)).then(function(val) {
-            return newStr = newStr.replace(fname, getPathFromObject(val, parsedPath.path) || '');
-          });
+    ref1 = m || [];
+    //get values
+    fn = (fname) => {
+      return toWait = toWait.then(() => {
+        el = /\{:(.+?):\}/.exec(fname)[1];
+        parsedPath = parseObjectPath(el);
+        // console.log "newStr template getting field #{fname}, #{el}"
+        return Q(operation.getValue(parsedPath.base)).then((val) => {
+          // console.log 'got el', el, fname, val
+          return newStr = newStr.replace(fname, getPathFromObject(val, parsedPath.path) || '');
         });
-      };
-    })(this);
-    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      fname = _ref1[_j];
-      _fn(fname);
+      });
+    };
+    for (j = 0, len1 = ref1.length; j < len1; j++) {
+      fname = ref1[j];
+      fn(fname);
     }
     return toWait.then(function() {
       return newStr;
     });
   };
-  Operation = (function() {
-    function Operation(config) {
+  Operation = class Operation {
+    constructor(config) {
       var val;
       this.parser = null;
       this.field = null;
       this.config = config;
-
       /*
       We have to use this shortcut to create new operation inside existing one, in order to save execution context
-       */
+      */
       this.createOperation = function(config) {
         return new Operation(config).setParser(this.getParser()).setField(this.getField());
       };
+      //default evaluate
       this._evaluate = function(res) {
         return res || Operation.EMPTY_VALUE;
       };
       this.evaluate = function(value, cb) {
-        var d;
+        var d, nonEmptyValue;
         d = Q.defer();
+        //set callback
         cb = cb || function() {};
         if (typeof cb !== 'function') {
           cb = function() {};
@@ -95,49 +98,49 @@ var __hasProp = {}.hasOwnProperty;
           cb = value;
           value = Operation.EMPTY_VALUE;
         }
-        if (this.config.final && value) {
+        nonEmptyValue = !!value;
+        if (value && value.length !== void 0 && value.length === 0) {
+          nonEmptyValue = false;
+        }
+        if (this.config.final && nonEmptyValue) {
           cb(value);
           d.resolve(value);
         } else {
           if (!this._evaluate) {
             Operation.EMPTY_VALUE;
           } else {
-            Q(this._evaluate(value)).then((function(_this) {
-              return function(result) {
-                return Q.fcall(function() {
-                  return _this.decorate(result);
-                }).then(function(res) {
-                  cb(res);
-                  return d.resolve(res);
-                }, function(error) {
-                  var val;
-                  val = _this.getField();
-                  val = val ? val.name : "undefined";
-                  console.log("Error during decoration " + val + ": " + _this.type, error.stack);
-                  cb(result);
-                  return d.resolve(result);
-                });
-              };
-            })(this), (function(_this) {
-              return function(error) {
+            Q(this._evaluate(value)).then((result) => {
+              return Q.fcall(() => {
+                return this.decorate(result);
+              }).then((res) => {
+                cb(res);
+                return d.resolve(res);
+              }, (error) => {
                 var val;
-                if (error.type = "StopParsingError") {
-                  return d.reject(error);
-                } else {
-                  val = _this.getField();
-                  val = val ? val.name : "undefined";
-                  console.log("Error in " + val + ": " + _this.type, error.stack);
-                  cb(value);
-                  return d.resolve(value);
-                }
-              };
-            })(this));
+                val = this.getField();
+                val = val ? val.name : "undefined";
+                console.log(`Error during decoration ${val}: ${this.type}`, error.stack);
+                cb(result);
+                return d.resolve(result);
+              });
+            }, (error) => {
+              var val;
+              if (error.type = "StopParsingError") {
+                return d.reject(error);
+              } else {
+                val = this.getField();
+                val = val ? val.name : "undefined";
+                console.log(`Error in ${val}: ${this.type}`, error.stack);
+                cb(value);
+                return d.resolve(value);
+              }
+            });
           }
         }
         return d.promise;
       };
-      this.setParser = function(parser) {
-        this.parser = parser;
+      this.setParser = function(parser1) {
+        this.parser = parser1;
         return this;
       };
       this.getParser = function() {
@@ -159,33 +162,30 @@ var __hasProp = {}.hasOwnProperty;
           return document;
         }
       };
-      this.getValue = (function(_this) {
-        return function(valName, cb) {
-          var dep, parent, parser, value, _i, _len;
-          if (_this.getField() && _this.getField().parentFields) {
-            parent = _this.getField().parentFields;
-            for (_i = 0, _len = parent.length; _i < _len; _i++) {
-              dep = parent[_i];
-              if (dep.name === valName) {
-                console.log("Warning: Cirsular dependencies while getting %s from %o", valName);
-                return false;
-              }
+      this.getValue = (valName, cb) => {
+        var dep, i, len, parent, parser, value;
+        if (this.getField() && this.getField().parentFields) {
+          parent = this.getField().parentFields;
+          for (i = 0, len = parent.length; i < len; i++) {
+            dep = parent[i];
+            if (dep.name === valName) {
+              console.log("Warning: Cirsular dependencies while getting %s from %o", valName);
+              return false;
             }
           }
-          parser = _this.getParser();
-          if (parser) {
-            value = parser.value(valName, _this, cb);
-            return value;
-          } else {
-            return Operation.EMPTY_VALUE;
-          }
-        };
-      })(this);
-      this.substitudeAttrAndValues = (function(_this) {
-        return function(str) {
-          return substitudeAttrAndValues(_this, str);
-        };
-      })(this);
+        }
+        parser = this.getParser();
+        // console.log("get field #{valName}", parser)
+        if (parser) {
+          value = parser.value(valName, this, cb);
+          return value;
+        } else {
+          return Operation.EMPTY_VALUE;
+        }
+      };
+      this.substitudeAttrAndValues = (str) => {
+        return substitudeAttrAndValues(this, str);
+      };
       this.getType = function(config) {
         var attr, type, typeName, type_mapping;
         type = '';
@@ -201,11 +201,11 @@ var __hasProp = {}.hasOwnProperty;
           "js": "js_eval",
           "separator": "split"
         };
-        if (config.type !== void 0) {
+        if (config && config.type !== void 0) {
           type = config.type;
         } else {
           for (attr in type_mapping) {
-            if (!__hasProp.call(type_mapping, attr)) continue;
+            if (!hasProp.call(type_mapping, attr)) continue;
             typeName = type_mapping[attr];
             if (typeof config[attr] !== "undefined") {
               type = typeName;
@@ -215,7 +215,7 @@ var __hasProp = {}.hasOwnProperty;
         }
         if (!type) {
           for (attr in config) {
-            if (!__hasProp.call(config, attr)) continue;
+            if (!hasProp.call(config, attr)) continue;
             typeName = config[attr];
             if (typeof this.operations[attr] !== "undefined") {
               type = attr;
@@ -226,20 +226,21 @@ var __hasProp = {}.hasOwnProperty;
         config.type = type;
         return type;
       };
+      //if undefined( operations was ommited ), return Operation.EMPTY_VALUE
       if (this.config === void 0) {
         this.config = {
           type: "manual",
           value: Operation.EMPTY_VALUE
         };
       }
+      //if array of operations
       if (this.config instanceof Array && this.config.length) {
         this.type = "operationQueue";
-        this._evaluate = (function(_this) {
-          return function(value) {
-            return _this.evaluateQueue(value);
-          };
-        })(this);
+        this._evaluate = (value) => {
+          return this.evaluateQueue(value);
+        };
       } else {
+        //in some case return initial value
         if (typeof this.config === "string" || typeof this.config === "number" || this.config === true || this.config === false) {
           this.config = {
             type: "manual",
@@ -251,7 +252,7 @@ var __hasProp = {}.hasOwnProperty;
           val = this.getField();
           val = val ? val.name : "undefined";
           if (this.type && !this.operations[this.type]) {
-            console.log("Unknown operation type " + val + ":" + this.type, this.config);
+            console.log(`Unknown operation type ${val}:${this.type}`, this.config);
           }
         } else {
           this._evaluate = this.operations[this.type];
@@ -259,35 +260,44 @@ var __hasProp = {}.hasOwnProperty;
       }
     }
 
-    return Operation;
-
-  })();
+  };
+  //this value should be returned, on soft fail
   Operation.EMPTY_VALUE = '';
+  //apply suffix, prefix, etc..
   Operation.prototype.decorate = function(value) {
-    var decoratorName, defer, found, func, toReturn, toWait, _ref;
+    var decoratorName, defer, found, func, ref, toReturn, toWait;
     defer = Q.defer();
     toReturn = value;
+    //    if !value && !@config.default && value != false
+    //      defer.resolve toReturn
+    //    else
+
+    //place decorator here in right order
     found = false;
     toWait = null;
-    _ref = Operation.prototype.decorators;
-    for (decoratorName in _ref) {
-      func = _ref[decoratorName];
+    ref = Operation.prototype.decorators;
+    // set normalize_space: true by default
+
+    // if @config && @config.type != "manual" && @config.normalize_space != false
+    //   @config.normalize_space = true
+    for (decoratorName in ref) {
+      func = ref[decoratorName];
       if (typeof this.config[decoratorName] !== "undefined") {
-        (function(_this) {
-          return (function(decoratorName, func) {
-            if (toWait === null) {
-              return toWait = Q(func.call(_this, value)).then(function(r) {
+        ((decoratorName, func) => {
+          if (toWait === null) {
+            return toWait = Q(func.call(this, value)).then(function(r) {
+              //                console.log "1 #{decoratorName} return #{r} and set value to #{r}"
+              return value = r;
+            });
+          } else {
+            return toWait = toWait.then((r) => {
+              return Q(func.call(this, value)).then(function(r) {
+                //                  console.log "2 #{decoratorName} return #{r} and set value to #{r}"
                 return value = r;
               });
-            } else {
-              return toWait = toWait.then(function(r) {
-                return Q(func.call(_this, value)).then(function(r) {
-                  return value = r;
-                });
-              });
-            }
-          });
-        })(this)(decoratorName, func);
+            });
+          }
+        })(decoratorName, func);
         found = true;
       }
     }
@@ -301,16 +311,17 @@ var __hasProp = {}.hasOwnProperty;
     return defer.promise;
   };
   Operation.prototype.evaluateQueue = function(value) {
-    var ops, result, singleConf, _i, _len, _ref;
+    var i, len, ops, ref, result, singleConf;
     ops = [];
-    _ref = this.config;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      singleConf = _ref[_i];
+    ref = this.config;
+    for (i = 0, len = ref.length; i < len; i++) {
+      singleConf = ref[i];
       ops.push(this.createOperation(singleConf));
     }
     result = Q(ops.shift().evaluate(value));
     ops.forEach(function(f) {
       return result = result.then(function(val) {
+        // console.log "op type #{f.type} prev val", val, typeof val
         return f.evaluate(val);
       });
     });
@@ -333,15 +344,15 @@ var __hasProp = {}.hasOwnProperty;
       return this.decorators.postProcessing.bind(this)(value);
     },
     normalize_space: function(value) {
-      var val, _i, _len, _results;
+      var i, len, results, val;
       if (this.config.normalize_space) {
         if (value instanceof Array) {
-          _results = [];
-          for (_i = 0, _len = value.length; _i < _len; _i++) {
-            val = value[_i];
-            _results.push(val = Operation.prototype.decorators.normalize_space.bind(this)(val));
+          results = [];
+          for (i = 0, len = value.length; i < len; i++) {
+            val = value[i];
+            results.push(val = Operation.prototype.decorators.normalize_space.bind(this)(val));
           }
-          return _results;
+          return results;
         } else {
           if (value === void 0 || typeof value !== 'string') {
             return value;
@@ -377,15 +388,13 @@ var __hasProp = {}.hasOwnProperty;
             d.resolve(value + res);
           }
           if (value instanceof Array) {
-            newvalue = value.map((function(_this) {
-              return function(el) {
-                if (el) {
-                  return el + res;
-                } else {
-                  return el;
-                }
-              };
-            })(this));
+            newvalue = value.map((el) => {
+              if (el) {
+                return el + res;
+              } else {
+                return el;
+              }
+            });
             return d.resolve(newvalue);
           }
         });
@@ -404,15 +413,13 @@ var __hasProp = {}.hasOwnProperty;
             d.resolve(res + value);
           }
           if (value instanceof Array) {
-            newvalue = value.map((function(_this) {
-              return function(el) {
-                if (el) {
-                  return res + el;
-                } else {
-                  return el;
-                }
-              };
-            })(this));
+            newvalue = value.map((el) => {
+              if (el) {
+                return res + el;
+              } else {
+                return el;
+              }
+            });
             return d.resolve(newvalue);
           }
         });
@@ -431,15 +438,13 @@ var __hasProp = {}.hasOwnProperty;
             d.resolve(res + value);
           }
           if (value instanceof Array) {
-            newvalue = value.map((function(_this) {
-              return function(el) {
-                if (el) {
-                  return res + el;
-                } else {
-                  return el;
-                }
-              };
-            })(this));
+            newvalue = value.map((el) => {
+              if (el) {
+                return res + el;
+              } else {
+                return el;
+              }
+            });
             return d.resolve(newvalue);
           }
         });
@@ -455,11 +460,11 @@ var __hasProp = {}.hasOwnProperty;
         return value;
       }
     },
-    "default": function(value) {
+    default: function(value) {
       var d;
       d = Q.defer();
       if (!value) {
-        this.createOperation(this.config["default"]).evaluate().then(function(res) {
+        this.createOperation(this.config.default).evaluate().then(function(res) {
           return d.resolve(res);
         });
       } else {
@@ -471,7 +476,7 @@ var __hasProp = {}.hasOwnProperty;
       var val;
       val = this.getField();
       val = val ? val.name : "undefined";
-      console.log("DEBUG " + val + ":" + this.type, value);
+      console.log(`DEBUG ${val}:${this.type}`, value);
       return value;
     }
   };

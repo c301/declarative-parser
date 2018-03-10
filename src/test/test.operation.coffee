@@ -79,6 +79,17 @@ describe "Operations testing", ()->
         expect res
         .to.equal "Price 301"
 
+    it "final empty array", ()->
+      op = new Operation( [
+        { "type": "manual", "value": [] }
+        { "type": "manual", "value": "Price", "final" : true }
+        { "type": "manual", "value": "301" }
+      ] )
+      d = op.evaluate()
+      d.then ( res )->
+        expect res
+        .to.equal "301"
+
   describe "Basic", ()->
     it "Pass only string", ()->
       op = new Operation("manual value")

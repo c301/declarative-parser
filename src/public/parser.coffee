@@ -81,7 +81,11 @@
       #nothing passed
       config = config || document
 
-      @config = config
+      if typeof config == "string"
+        @config = {}
+      else
+        @config = config
+
       @config.prompt = @config.prompt || prompt.bind window
       @defaultParsingConfig = false
       @defaultValues = config.defaultValues || {} 
@@ -407,7 +411,7 @@
     throw error
 
   class StopParsingError extends Error
-    constructor: ( @message ) -> super @message
+    constructor: ( @message ) -> super()
 
   Parser
 )

@@ -88,7 +88,12 @@
           cb = value
           value = Operation.EMPTY_VALUE
 
-        if @config.final && value
+        nonEmptyValue = !!value
+
+        if value && value.length != undefined && value.length == 0
+          nonEmptyValue = false
+
+        if @config.final && nonEmptyValue
           cb value
           d.resolve value
         else

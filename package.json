@@ -2,19 +2,20 @@
   "name": "package",
   "version": "0.0.0",
   "dependencies": {
+    "jshint": "^2.9.5",
     "objectpath": "^1.2.1"
   },
   "devDependencies": {
-    "chai": "^1.9.1",
+    "chai": "^4.1.2",
     "connect": "^3.4.0",
     "event-stream": "^3.1.2",
-    "gulp": "~3.6.0",
-    "gulp-coffee": "~1.4.1",
-    "gulp-jshint": "~1.5.2",
-    "gulp-watch": "~0.5.3",
-    "jshint-stylish": "~0.1.5",
+    "gulp": "^3.9.1",
+    "gulp-coffee": "^3.0.2",
+    "gulp-jshint": "^2.1.0",
+    "gulp-watch": "~4.3.11",
+    "jshint-stylish": "~2.2.1",
     "requirejs": "^2.1.11",
     "serve-static": "^1.10.0",
-    "through2": "^0.4.1"
+    "through2": "^2.0.3"
   }
 }
